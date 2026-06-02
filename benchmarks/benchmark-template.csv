@@ -1,0 +1,3 @@
+date,tool,model,task_type,task_description,input_context_size,agent_mode,cost_estimate,time_saved_minutes,accepted_output,review_effort,bugs_or_rework,notes
+2026-06-02,GitHub Copilot,GPT-5.4,implementation_plan,Token budget alert feature,3 files,no,,30,yes,medium,no,Good plan with clear risks
+2026-06-02,Example Tool,Small model,documentation,README cleanup,1 file,no,,10,yes,low,no,Small model was enough
