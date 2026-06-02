@@ -4,7 +4,7 @@
 
 Before talking about tokens, watch the spirit of the problem:
 
-<video src="The-Max-Power-Way.mp4" controls autoplay muted loop playsinline width="100%"></video>
+https://github.com/user-attachments/assets/21efcbfc-d374-4fb3-91c2-2f0eb92643f7
 
 That is how many of us use AI coding tools today.
 
