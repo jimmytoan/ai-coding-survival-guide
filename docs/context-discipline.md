@@ -41,6 +41,8 @@ A fresh chat often produces cleaner answers.
 
 If your tool supports compaction or summarization, use it.
 
+But timing matters: compact while the session is still active (the cache is warm), not after a long idle break. See [Compaction and the Prompt Cache](compact-and-caching.md) for why a cold cache can cost ~10× more.
+
 A useful compacted summary should include:
 
 - Current goal

@@ -109,6 +109,7 @@ AI should reduce engineering waste, not generate faster waste.
 | Need | Read this |
 |---|---|
 | Learn how to avoid wasting context | [Context Discipline](docs/context-discipline.md) |
+| Compact without surprise token costs | [Compaction and the Prompt Cache](docs/compact-and-caching.md) |
 | Decide which model to use | [Model Selection](docs/model-selection.md) |
 | Understand when to use agent mode | [Agent Mode](docs/agent-mode.md) |
 | Create lightweight team rules | [Team Guidelines](docs/team-guidelines.md) |
@@ -166,6 +167,10 @@ Warn users at 70%, warn again at 90%, block non-admin users at 100%.
 Admins can override. Usage must be auditable.
 Next step: propose the API and database changes before writing code.
 ```
+
+Timing matters too: compact while the session is still active, not after a long idle break. In Claude Code the prompt cache only survives about an hour of inactivity on a subscription. Compacting a warm session is cheap; compacting a cold one reprocesses the whole history at ~10× the price.
+
+More: [Compaction and the Prompt Cache](docs/compact-and-caching.md)
 
 ### 3. Use the right model for the task
 
