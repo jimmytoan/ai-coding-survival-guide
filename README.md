@@ -106,6 +106,14 @@ AI should reduce engineering waste, not generate faster waste.
 
 ## Start here
 
+**On a subscription (Claude Max or Codex Pro)?** Start with the playbook — your meter is rate limits, not dollars:
+
+| Need | Read this |
+|---|---|
+| **Stretch your subscription (cross-tool)** | **[Token Optimization Playbook](docs/token-optimization-playbook.md)** |
+| ↳ Claude Max specifics | [Claude Code Optimization](docs/claude-code-optimization.md) |
+| ↳ Codex Pro specifics | [Codex Optimization](docs/codex-optimization.md) |
+
 | Need | Read this |
 |---|---|
 | Learn how to avoid wasting context | [Context Discipline](docs/context-discipline.md) |

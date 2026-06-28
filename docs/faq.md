@@ -40,6 +40,10 @@ Agent mode is useful for clear, scoped tasks.
 
 Avoid using it for tiny tasks or vague “fix everything” requests.
 
+## I'm on a flat subscription (Claude Max / Codex Pro). Why optimize at all?
+
+Because the meter isn't dollars — it's **throttling**. Both tools cap you with a 5-hour rolling window *and* a weekly limit. Wasting tokens on noisy logs, oversized models, or stale context means you hit that cap sooner and get locked out (or pushed onto pay-as-you-go credits) right when you need the tool for real work. Optimizing buys you **more useful work per window**. See the [Token Optimization Playbook](token-optimization-playbook.md), plus [Claude Code](claude-code-optimization.md) and [Codex](codex-optimization.md) specifics.
+
 ## What is context discipline?
 
 Context discipline means giving the assistant enough information to solve the task, but not dumping unnecessary context into the model.
