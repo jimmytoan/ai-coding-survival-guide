@@ -25,6 +25,17 @@ Track:
 
 Use: [Benchmark Template](../benchmarks/benchmark-template.csv)
 
+## See it before you guess
+
+Measuring outcomes is the goal, but most tools also expose the raw numbers — look at them instead of guessing:
+
+- **Session usage** — many CLIs show token counts and an estimated cost for the current session (in Claude Code, `/usage`). Treat the dollar figure as an estimate computed locally, not a bill.
+- **What is in your context right now** — a context breakdown (`/context` in Claude Code) shows how much of the window is going to tool definitions, project files, history, and so on. This is where you catch a bloated MCP server or rules file. See [MCP and Tool Overhead](mcp-and-tool-overhead.md).
+- **Per-feature attribution** — newer tooling attributes usage to skills, subagents, plugins, and individual MCP servers, so you can tell whether an agent team or a connected server was actually worth it.
+- **Authoritative billing** — for real spend on usage-based plans, check the provider's console/usage page, not the local estimate.
+
+For teams: provider consoles support workspace spend limits and per-developer cost reporting. If you route through an LLM gateway, it sees every request and is a natural place to track spend centrally.
+
 ## Useful metrics
 
 ### Cost per accepted task

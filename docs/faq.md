@@ -44,6 +44,18 @@ Avoid using it for tiny tasks or vague “fix everything” requests.
 
 Context discipline means giving the assistant enough information to solve the task, but not dumping unnecessary context into the model.
 
+## Do MCP servers cost tokens even when I do not use them?
+
+They can. Each connected server's tool definitions may be loaded into context — historically on every request — and a few popular servers can total tens of thousands of tokens. Newer clients defer tool definitions (load names only until a tool is used), which helps a lot, but connecting only what you need still matters. See [MCP and Tool Overhead](mcp-and-tool-overhead.md).
+
+## Does my CLAUDE.md / rules file cost tokens?
+
+Yes. Project rule files are loaded at session start and carried on every turn, so a long one is a tax on every message — even unrelated ones. Keep it to genuine essentials and move occasional runbooks into on-demand skills or commands. See [Project Context Files](project-context-files.md).
+
+## Do parallel agents save money?
+
+No — they multiply it. Each subagent has its own context window, so running several in parallel costs more in total even though it finishes faster. Subagents *do* save tokens when used to isolate noisy output (tests, logs) from your main conversation. See [Subagents and Agent Teams](subagents-and-agent-teams.md).
+
 ## What is the Max Power way?
 
 It is a joke from The Simpsons:

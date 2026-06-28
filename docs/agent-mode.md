@@ -120,6 +120,23 @@ After agent work, review:
 
 Template: [PR Review Checklist](../templates/pr-review-checklist.md)
 
+## Use plan mode before expensive changes
+
+Many tools have a dedicated plan mode (in Claude Code, Shift+Tab) where the agent explores the codebase and proposes an approach for your approval **before** it edits anything.
+
+This is a token saver, not just a safety feature: approving a plan is far cheaper than letting the agent take an expensive wrong path and then paying again to unwind it.
+
+If the agent starts heading the wrong direction, stop it early (Escape) and use `/rewind` or a checkpoint rather than letting the mistake compound.
+
+## Spawning multiple agents
+
+One agent doing a delegated job is the simple case. Spawning *several* agents is a different cost trade:
+
+- A subagent that **absorbs noisy output** (running tests, reading logs, fetching docs) keeps that noise out of your main context — it saves tokens.
+- Running agents **in parallel** multiplies cost — each one carries its own full context window — but buys wall-clock speed.
+
+Know which one you are doing before you launch it. See [Subagents and Agent Teams](subagents-and-agent-teams.md).
+
 ## Key takeaway
 
 Agent mode should feel like controlled delegation.

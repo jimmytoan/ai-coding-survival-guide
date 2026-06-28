@@ -110,8 +110,11 @@ AI should reduce engineering waste, not generate faster waste.
 |---|---|
 | Learn how to avoid wasting context | [Context Discipline](docs/context-discipline.md) |
 | Compact without surprise token costs | [Compaction and the Prompt Cache](docs/compact-and-caching.md) |
+| Stop MCP servers from eating your context | [MCP and Tool Overhead](docs/mcp-and-tool-overhead.md) |
+| Keep rules files from taxing every turn | [Project Context Files](docs/project-context-files.md) |
 | Decide which model to use | [Model Selection](docs/model-selection.md) |
 | Understand when to use agent mode | [Agent Mode](docs/agent-mode.md) |
+| Know when subagents save vs. multiply cost | [Subagents and Agent Teams](docs/subagents-and-agent-teams.md) |
 | Create lightweight team rules | [Team Guidelines](docs/team-guidelines.md) |
 | Track AI coding cost and outcomes | [Cost Observability](docs/cost-observability.md) |
 | Compare other tools fairly | [Alternatives](docs/alternatives.md) |
@@ -282,7 +285,9 @@ Avoid it for tiny tasks where normal chat is enough.
 
 Agent mode should feel like delegation, not gambling.
 
-More: [Agent Mode](docs/agent-mode.md)
+The same caution applies when you spawn *multiple* agents: a subagent that absorbs noisy output (tests, logs) saves your main context, but running agents in parallel multiplies cost — each one carries its own full context window.
+
+More: [Agent Mode](docs/agent-mode.md) · [Subagents and Agent Teams](docs/subagents-and-agent-teams.md)
 
 ### 8. Measure cost per useful outcome
 
@@ -308,6 +313,17 @@ The goal is not minimum AI usage.
 The goal is maximum useful output per token.
 
 More: [Cost Observability](docs/cost-observability.md)
+
+### 9. Mind the context you did not type
+
+Not all context comes from your prompt. Some of it is loaded for you, on every turn:
+
+- **MCP server tool definitions.** A few popular servers can eat 50K+ tokens before you type anything. Connect only what you need, prefer a CLI (`gh`, `aws`, `gcloud`) when one exists, and check what is loaded (`/context` in Claude Code).
+- **Project rule files** (CLAUDE.md, `.cursorrules`, `AGENTS.md`). Loaded at session start and carried every turn. Keep them to genuine essentials and move occasional runbooks into on-demand skills or commands.
+
+Anything loaded automatically is paid for repeatedly.
+
+More: [MCP and Tool Overhead](docs/mcp-and-tool-overhead.md) · [Project Context Files](docs/project-context-files.md)
 
 ## Recommended team message
 

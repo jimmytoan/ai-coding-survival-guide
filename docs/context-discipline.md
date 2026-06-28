@@ -153,6 +153,15 @@ Output:
 Do not write code yet.
 ```
 
+## Mind the context you did not type
+
+Not all context comes from your prompt. Some of it is loaded automatically and carried on every turn:
+
+- **Tool definitions** from connected MCP servers — sometimes tens of thousands of tokens before you type anything. See [MCP and Tool Overhead](mcp-and-tool-overhead.md).
+- **Project rule files** (CLAUDE.md, `.cursorrules`, `AGENTS.md`) loaded at session start. See [Project Context Files](project-context-files.md).
+
+Anything loaded automatically is paid for repeatedly, so it deserves the same scrutiny as the prompt you type. If your tool can show you what is in context (e.g. `/context` in Claude Code), check it instead of guessing.
+
 ## Key takeaway
 
 Context is not free.
