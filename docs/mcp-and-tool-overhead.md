@@ -1,66 +1,120 @@
-# MCP Servers and Tool Overhead: The Context You Pay For Every Turn
+# MCP and Tool Overhead
 
-> **TL;DR** Every MCP server you connect injects its tool definitions — names, descriptions, and parameter schemas — into the context. In the worst case this is loaded on **every single request**, before you type anything. A handful of popular servers can eat **50K+ tokens** of a 200K window. Modern clients fix this by *deferring* tool definitions (loading only tool names until a tool is actually used), but the habit still matters: connect only the servers you need, prefer a CLI when one exists, and check what is actually in your context.
+> Product-specific behavior last verified: **2026-07-11**.
 
-This extends [Context Discipline](context-discipline.md) to the context you do not type: tool definitions, project files, and other "invisible" tokens that ride along on every turn.
+Coding agents need tool descriptions to know what they can call. Those descriptions, tool results, and follow-up reasoning consume context capacity and usage—even when your typed prompt is short.
 
-## Why tool definitions cost tokens
+The practical goal is not “avoid tools.” It is to expose the smallest safe, useful tool surface for the task.
 
-The model cannot call a tool it has not been told about. So for the model to use an MCP server, the client has to describe each tool — its name, what it does, and every parameter — in the request. Historically that full schema was sent **on every message in the session**, whether or not you ever used the tool.
+## Where overhead comes from
 
-That overhead is real and often invisible. Reported figures for popular servers:
+A tool-enabled request may include:
 
-| MCP server | Tools | Approx. tokens |
-| --- | --- | --- |
-| GitHub (official) | ~35 | ~26K |
-| Slack | ~11 | ~21K |
-| Sentry | ~5 | ~3K |
-| Grafana | ~5 | ~3K |
-| Splunk | ~2 | ~2K |
-| **Five-server setup** | **~58** | **~55K** |
+- Tool names, descriptions, and parameter schemas
+- Authentication and policy metadata
+- Tool-selection or search steps
+- Returned files, records, logs, and errors
+- Model reasoning and follow-up calls
 
-A 200K-token context window sounds huge until ~25% of it is gone before the conversation starts. GitHub's server alone is roughly 13% of the window. Connect ten servers and you can burn 75K+ tokens on definitions you may never call — tokens that also push your real work closer to auto-compaction.
+Some clients load every schema up front. Others defer full definitions until the model searches for or selects a tool. Prompt caching can also reduce repeated processing. Exact behavior depends on the client, model, server, and cache state.
 
-## The fix: deferred tool loading (Tool Search)
+## Deferred loading helps
 
-The newer approach is to **not** load every definition upfront. Instead the client loads only tool *names*, and the model searches for and pulls in a tool's full schema **on demand** when it actually needs it.
+Modern tool-search designs can keep large schemas out of the initial context and load them only when needed. Anthropic's Tool Search documentation reports large savings in its example configurations, and Claude Code defers MCP tools on supported models by default.
 
-- On the Claude Developer Platform this is the **Tool Search Tool** (mark tools with `defer_loading: true`).
-- In Claude Code, **MCP tool definitions are deferred by default** — only tool names enter context until Claude uses a specific tool.
+Deferred loading reduces idle overhead; it does not make every connection free:
 
-The savings are large: Anthropic reports the Tool Search approach preserves ~191,300 tokens of context vs. ~122,800 with everything loaded upfront — about an **85% reduction** in tool-definition overhead, and up to ~95% for setups with many servers.
+- Names and discovery information may still be present.
+- Selecting a tool loads its definition.
+- Results can be much larger than the schema.
+- Too many similar tools make selection less reliable.
+- Permissions and prompt-injection risks remain.
 
-This is great, but it is not a reason to connect everything. Deferred loading lowers the *idle* cost; it does not make a sprawling, half-used set of servers free, and not every tool or client defers. The discipline still applies.
+Measure your actual client rather than applying one token estimate to every setup.
 
-## Practical rules
+## Choose CLI, MCP, or connector deliberately
 
-**Connect intentionally**
+| Option | Strengths | Trade-offs |
+|---|---|---|
+| CLI | Composable, familiar, often no large schema catalog | Can inherit broad ambient credentials and emit noisy unstructured output |
+| MCP server | Typed tools, structured results, explicit capabilities | Adds discovery/schema surface and another trust boundary |
+| Product connector/app | Managed auth and rich private context | Data flow, scopes, auditability, and availability are provider-specific |
+| Direct API or script | Precise, automatable, filter before model input | Engineering and credential-management cost |
 
-- Only enable the MCP servers you actually use in a given project. More servers = more names, more tool-search round-trips, more surface area.
-- Disable servers you are not actively using. In Claude Code, `/mcp` lists configured servers and lets you turn them off.
+“Prefer the CLI” is not universal advice. A read-only, narrowly scoped connector may be safer and more efficient than a shell with administrator credentials. A small CLI query may be cheaper than loading a broad tool suite.
 
-**Prefer a CLI when one exists**
+Evaluate:
 
-- Tools like `gh`, `aws`, `gcloud`, and `sentry-cli` are often **more context-efficient than an MCP server** because they add no per-tool listing at all — the agent just runs a shell command. If you already have the CLI authenticated, you may not need the equivalent MCP server.
+- Least-privilege scopes
+- Structured and filterable output
+- Audit logs and approval behavior
+- Credential isolation
+- Context and round-trip cost
+- Reliability and error semantics
+- Whether a maintained purpose-built integration already exists
 
-**Look at what is actually loaded**
+## Filter before model ingestion
 
-- In Claude Code, `/context` shows what is consuming your window (tool definitions, system prompt, files, history). `/usage` attributes recent usage to skills, subagents, plugins, and individual MCP servers. If a server you never call is showing up large, drop it.
+The largest cost is often tool output, not tool definitions.
 
-**Watch for the same pattern outside MCP**
+Prefer:
 
-- Project rule files, large system prompts, and long tool lists all behave the same way: they are sent repeatedly. The MCP lesson generalizes — anything that rides on every request deserves the same scrutiny as the prompt you type. See [Project Context Files](project-context-files.md).
+- Focused test selection before a full suite
+- Failure summaries plus a small surrounding excerpt
+- Server-side fields, date ranges, limits, and filters
+- `git diff --stat` before a full diff
+- Search results with file paths and line numbers
+- Structured JSON reduced to required fields
 
-## Key takeaway
+Keep enough context to diagnose the problem. A filtered log without the command, timestamp, or surrounding event can be confidently misread.
 
-Tool definitions are context you pay for whether or not you use them.
+## Apply least privilege
 
-Connect the servers you need, prefer a CLI when there is one, and check `/context` instead of guessing.
+- Enable only tools needed for the current repository or task.
+- Prefer read-only scopes for investigation and review.
+- Separate development and production identities.
+- Require approval for external messages, writes, deployments, billing actions, and destructive operations.
+- Disable or disconnect unused servers.
+- Review server provenance, updates, and transport security.
+- Do not expose secrets as model-visible tool arguments or results when a broker can handle them.
+
+Tools turn model output into real actions. Their authorization boundary matters more than the wording of the prompt.
+
+## Treat tool results as untrusted data
+
+Issues, documents, web pages, code comments, logs, and remote records can contain instructions designed to redirect an agent.
+
+- Delimit retrieved content as data.
+- Do not execute commands embedded in results without task-level authorization.
+- Keep sensitive actions behind deterministic policy and human approval.
+- Validate identifiers and arguments before write operations.
+- Inspect the proposed action and target, not only the final response.
+- Red-team automated workflows with malicious content.
+
+See [Security and Privacy](security-and-privacy.md).
+
+## Audit the tool surface
+
+Periodically ask:
+
+- Which tools and servers are enabled?
+- Which were actually used?
+- How much context and output did they add?
+- Are two tools overlapping?
+- Are scopes broader than the task?
+- Can filtering happen before data reaches the model?
+- Is a rarely used workflow better as an on-demand skill, command, or server?
+- Does the client support deferred loading or tool search?
+
+Use the client's context and usage diagnostics when available.
 
 ## Sources
 
-- Anthropic Engineering — *Introducing advanced tool use* (Tool Search Tool, token figures): <https://www.anthropic.com/engineering/advanced-tool-use>
-- Claude Code Docs — *Manage costs effectively* (reduce MCP overhead, deferred by default, `/context`, `/mcp`, prefer CLI tools): <https://code.claude.com/docs/en/costs>
-- Claude Code Docs — *Scale with MCP tool search*: <https://code.claude.com/docs/en/mcp>
+- Anthropic — [Introducing advanced tool use](https://www.anthropic.com/engineering/advanced-tool-use)
+- Anthropic — [Scale with MCP tool search](https://code.claude.com/docs/en/mcp#scale-with-mcp-tool-search)
+- OpenAI — [Model Context Protocol](https://learn.chatgpt.com/docs/extend/mcp)
+- OWASP — [Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
 
-*Token figures above are reported/illustrative and vary by server version and client. Use `/context` to measure your own setup.*
+## Key takeaway
+
+Select tools by capability, permissions, output quality, and measured overhead. Reduce the surface, filter results early, and treat everything retrieved as untrusted data.

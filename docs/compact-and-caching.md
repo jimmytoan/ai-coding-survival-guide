@@ -1,112 +1,132 @@
-# Compaction and the Prompt Cache: Avoid Surprise Token Costs
+# Compaction and Prompt Caching
 
-> **TL;DR** Claude Code keeps your conversation in a server-side cache so it does not reprocess your whole history on every turn. While you are actively working, that cache is "warm" and compacting is cheap. But the cache only survives a limited gap of inactivity (**one hour** on a Claude subscription). If you leave a conversation idle for too long, then come back and compact, the cache has expired — so the entire conversation gets reprocessed at the **full input rate, roughly 10× the cached price**. Compact while the session is still warm. Be deliberate about compacting after a long break.
+> Claude-specific cache details last verified: **2026-07-11**.
 
-This is a deeper dive into the "compact long conversations" advice in [Context Discipline](context-discipline.md).
+Compaction and prompt caching solve different problems:
 
-## Why caching exists
+- **Prompt caching** reduces repeated processing of an unchanged request prefix.
+- **Compaction** replaces detailed conversation history with a shorter summary to free context capacity.
 
-The model has no memory between requests. Every time you send a message, Claude Code re-sends the **entire context** — the system prompt, your project context (CLAUDE.md, memory), every prior message and tool result, and your new message.
+Caching is an efficiency mechanism. Compaction is a lossy state transition. Use both deliberately.
 
-Prompt caching stops you from paying full price for that repeated content on every turn. The API matches the **start of each request** (the "prefix") against content it recently processed. On a normal turn, almost the whole request is identical to the last one and only your latest exchange is new — so the unchanged prefix is served from cache, and only the new part is processed.
+## How prompt caching helps
 
-Two prices matter here:
+Coding conversations repeatedly send a stable prefix: system instructions, project guidance, tool definitions, and earlier messages. A provider can reuse computation for that unchanged prefix instead of processing it from scratch.
 
-- **Base input tokens** — full price for processing content the first time (a "cache miss" or "cache write").
-- **Cache hits** — content served from cache, billed at roughly **10% of the base input rate**.
+Claude's current API pricing distinguishes:
 
-That 10× gap is the whole story.
+- Base input
+- Five-minute cache writes
+- One-hour cache writes
+- Cache hits
+- Output
 
-## The pricing, in numbers
+At the time this guide was verified, cache hits were priced at one-tenth of base input, while cache writes carried a premium. Check the current pricing for the model and provider you use.
 
-Using Claude Opus 4.8 as the example (rates per million tokens, "MTok"):
+On a subscription, these differences normally affect included usage rather than a direct per-request dollar bill. Once extra usage or API billing applies, they can affect spend as well.
 
-| Token type | Rate | Relative to base input |
-| --- | --- | --- |
-| **Base input** (cache miss / full reprocess) | **$5.00 / MTok** | 1× |
-| 5-minute cache write | $6.25 / MTok | 1.25× |
-| 1-hour cache write | $10.00 / MTok | 2× |
-| **Cache hit & refresh** (warm read) | **$0.50 / MTok** | **0.1× (10× cheaper)** |
-| Output | $25.00 / MTok | — |
+## Cache lifetime depends on authentication
 
-The key comparison: **$0.50/MTok when the cache is warm vs. $5.00/MTok when it has expired.** Same content, 10× the cost.
+Claude Code currently selects cache behavior based on authentication and provider:
 
-## What `/compact` actually does
+- Claude subscription authentication uses a one-hour cache duration by default.
+- Direct API and supported third-party-provider setups commonly use a five-minute duration by default.
+- API users can opt into a one-hour cache where supported, at the provider's documented write rate.
 
-Compaction replaces your long message history with a shorter **summary**, freeing up context space. It happens two ways:
+Every successful reuse refreshes the lifetime. Confirm current behavior in the official documentation; providers and integrations can differ.
 
-- **Auto-compaction** — Claude Code triggers it automatically as you approach the context-window limit.
-- **Manual** — you run `/compact` yourself, optionally with instructions (e.g. `/compact Focus on the failing tests and the files we changed`).
+## What compaction does
 
-To build that summary, Claude Code sends a **one-off summarization request** containing your existing system prompt, tools, and full history, plus a "summarize this" instruction at the end. **That request shares your prefix** — so whether it is cheap or expensive depends entirely on whether your cache is still warm.
+Compaction summarizes older conversation state and starts a shorter working context. It is useful when:
 
-## The cache window: one hour (on a subscription)
+- A long task must continue past the comfortable context size.
+- A coherent milestone has completed.
+- Raw exploration or tool output no longer needs to remain verbatim.
+- The next step depends on decisions and evidence, not the full transcript.
 
-A cached prefix expires after a period of **inactivity**. Every request that hits the cache **resets the timer**, so the cache stays warm as long as you keep working. The length of gap the cache can survive is the TTL ("time to live"), and Claude Code picks it for you based on how you authenticate:
+Compaction is not a substitute for starting fresh when the objective changes.
 
-- **On a Claude subscription** (Pro / Max / Team / Enterprise): Claude Code automatically requests the **1-hour TTL**. Because usage is included in your plan rather than billed per token, the longer window costs nothing extra — it just keeps your cache warm through longer breaks. (If you go over your plan limit and start drawing on usage credits, it drops to the 5-minute TTL.)
-- **On an API key or third-party provider** (Bedrock, Vertex, Foundry): you pay per token, so the default is the cheaper **5-minute TTL**. You can opt into the 1-hour window with `ENABLE_PROMPT_CACHING_1H=1`.
+## Compact state that can survive
 
-For most people on a subscription, **one hour is the number to remember.**
+A useful summary preserves:
 
-## The cheap case: compacting a warm session
+- Goal and acceptance criteria
+- Branch, commit, and relevant workspace state
+- Files changed and important code locations
+- Confirmed facts and decisions with reasons
+- Rejected approaches and why they failed
+- Commands run and exact outcomes
+- Remaining risks and assumptions
+- Open questions
+- The precise next step
 
-You have been actively working — sending messages every few minutes. Your cache is warm.
+Example: [Context Compaction](../examples/context-compaction-example.md)
 
-When you compact (auto or manual), the summarization request **reads your existing history from cache** instead of reprocessing it. Most of the time and cost goes into *generating* the summary, not re-reading the conversation. The turn right after compaction then rebuilds the cache for only the much shorter summary.
+Weak summaries such as “we discussed the auth bug” cause the next model turn to rediscover the work or, worse, invent missing state.
 
-**Net effect:** compacting mid-flow is inexpensive. This is exactly when you *want* to do it — at a natural break between tasks.
+## Warm versus cold continuation
 
-## The expensive case: compacting after a long break
+When a stable prefix is still cached, the provider can reuse it while producing the summary. After the cache expires, the next request must process the long history again before it can compact or continue.
 
-You leave the conversation for **more than an hour** (lunch, a meeting, end of day, the weekend). When you come back to a long conversation, Claude Code may notice the large context and **suggest compacting it.**
+The practical rule:
 
-Here is the trap. While you were away, the cache **expired.** So the first request you send back into that session — *including a compaction summarization request* — is a **cache miss**. The API has to recompute the **entire conversation history from scratch at the full base input rate**, then re-establish the cache.
+- Compact at a natural milestone while the task is active when you know it must continue.
+- After a long break, decide whether the old task still needs its detailed history.
+- If not, start a fresh task from a concise handoff rather than paying usage and attention to revive stale context.
 
-If that long history is, say, 150,000 tokens:
+Do not compare only a cache-hit input rate with a base-input rate and call that the total cost of compaction. Cache writes, output, subscription accounting, model choice, and provider behavior also matter.
 
-| Scenario | What is billed | Cost (Opus 4.8) |
-| --- | --- | --- |
-| Compact while **warm** | 150K tokens at the cache-hit rate ($0.50/MTok) | **~$0.08** |
-| Compact while **cold** (>1h idle) | 150K tokens at the base input rate ($5.00/MTok) + re-cache | **~$0.75+** |
+## Cache-friendly changes
 
-Same conversation, **~10× the cost**, just because the cache lapsed before you acted.
+Stable prefixes cache better. Configure core model and tool choices deliberately near the start of a task.
 
-> **Important nuance:** the expensive part is not `/compact` itself — it is the **cache having expired.** That first turn back into a long, cold session is costly *whether or not you compact*. But compaction is the moment it bites hardest, because it forces a full read of your entire (long) history to produce the summary. The real warning: **be careful with the first action you take when returning to a long, idle conversation.**
+Claude's current behavior has an important nuance:
 
-## Practical rules of thumb
+- With deferred MCP tool loading—the default on supported models—tool changes can be appended without invalidating the existing cached prefix.
+- When full tool schemas are loaded up front, changing those tools can invalidate the affected prefix.
 
-**Do**
+Up-front loading can occur with unsupported models or providers, disabled tool search, or tools marked to always load. Do not apply a universal “any MCP change breaks the cache” rule.
 
-- Compact at **natural breaks between tasks while you are still actively working** — the cache is warm and it is cheap.
-- Use `/clear` to start fresh when switching to unrelated work, rather than carrying a huge history forward.
-- Set your model and connect any MCP servers **at the start** of a session, and avoid changing them mid-task (a model switch or MCP connect/disconnect also invalidates the cache).
-- Watch your cache health: a status-line script can show `cache_read_input_tokens` (warm reads) vs. `cache_creation_input_tokens` (writes/misses). A high read-to-write ratio means caching is working.
+## Re-establish evidence after compaction
 
-**Be careful**
+Because summaries are lossy:
 
-- Returning to a conversation that has been **idle for more than an hour** — the cache is gone, and the first turn (especially a compact on a long history) is your most expensive request.
-- If you have been away and just want to abandon a path rather than continue, consider `/rewind` to an earlier point instead of compacting — rewinding truncates back to a prefix that was already cached.
-- If the context is large but stale and you do not need it, `/clear` and a fresh start is often cheaper and cleaner than reprocessing 150K tokens just to summarize them.
+1. Reopen critical files before editing them.
+2. Inspect the current diff and workspace state.
+3. Re-run the focused test when the result is important to the next step.
+4. Verify version-sensitive external facts again if time has passed.
+5. Treat summary statements as leads when they conflict with current evidence.
 
-## FAQ
+Never claim a previous test still passes after later edits merely because the compacted summary says it passed earlier.
 
-**Does just sending a normal message after a long break also cost more?** Yes. Any first request after the cache expires reprocesses the full history at the base input rate. Compaction simply makes it most visible because it reads the entire long history to summarize it.
+## When to start fresh instead
 
-**Is compaction bad, then?** No — compaction is good and necessary for long sessions. It keeps your context small so later turns stay cheap. The only thing to manage is *when* the one-time reprocessing cost lands. Do it warm.
+Start a new task when:
 
-**How do I know if I am on the 1-hour or 5-minute window?** Subscription plans get the 1-hour TTL automatically. API-key / Bedrock / Vertex / Foundry users get 5 minutes unless they set `ENABLE_PROMPT_CACHING_1H=1`. You can force 5 minutes anywhere with `FORCE_PROMPT_CACHING_5M=1` (useful for debugging).
+- The objective or risk profile changed.
+- The prior approach is abandoned.
+- Independent review is needed.
+- Old logs and rejected hypotheses dominate.
+- Only a small set of durable decisions remains relevant.
 
-## Key takeaway
+Carry forward a handoff, not the entire conversational history.
 
-Compaction is not the cost. A cold cache is.
+## Practical checklist
 
-Compact while the session is warm.
+- [ ] Compact at a coherent milestone, not mid-edit
+- [ ] Preserve facts, decisions, failures, checks, risks, and next step
+- [ ] Start fresh for unrelated work
+- [ ] Account for cache state without assuming universal pricing
+- [ ] Reopen critical code and inspect the current diff after compaction
+- [ ] Re-run checks whose result matters to the next step
+- [ ] Verify MCP caching behavior for the active model/provider
 
 ## Sources
 
-- Claude Code Docs — *How Claude Code uses prompt caching*: <https://code.claude.com/docs/en/prompt-caching>
-- Claude Code Docs — *Manage costs effectively*: <https://code.claude.com/docs/en/costs>
-- Claude API Docs — *Prompt caching* (TTLs and pricing): <https://platform.claude.com/docs/en/build-with-claude/prompt-caching>
+- Anthropic — [How Claude Code uses prompt caching](https://code.claude.com/docs/en/prompt-caching)
+- Anthropic — [Manage costs effectively](https://code.claude.com/docs/en/costs)
+- Anthropic API — [Prompt caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)
 
-*Pricing figures above use Claude Opus 4.8 list rates and are illustrative; check the current model pricing page for the model your team actually uses.*
+## Key takeaway
+
+Caching makes stable context cheaper to reuse. Compaction makes long context smaller by losing detail. Preserve the state that matters, then re-establish evidence before continuing.

@@ -1,49 +1,52 @@
 # Small Model Use Cases
 
-Small and cheaper models are often enough for everyday tasks.
+Small and cheaper models are often enough when the task is narrow, the evidence is
+local, and mistakes are easy to detect.
 
 ## Good small-model tasks
 
-- Explain a function
-- Summarize a file
-- Draft documentation
-- Generate simple tests
-- Rename variables
-- Suggest comments
-- Explain an error
-- Convert a small snippet
-- Create a checklist
-- Find obvious duplicated logic
+- Explain or summarize one file or function
+- Draft documentation from supplied facts
+- Generate table-driven tests for a clear contract
+- Rename variables or perform a mechanical transformation
+- Classify logs, issues, or review comments
+- Create a checklist or pull request summary from a diff
+- Find obvious duplication in a small snippet
+- Convert structured data between simple formats
 
 ## Example prompts
 
 ```text
-Explain this function in simple terms.
-Do not suggest refactoring.
+Explain this function's inputs, outputs, side effects, and error behavior.
+Use only the supplied code and do not suggest refactoring.
 ```
 
 ```text
-Draft a README section for this feature.
-Keep it concise.
+Draft release notes from this diff. Mention only user-visible behavior that the
+diff demonstrates. Put uncertain items under “Needs confirmation.”
 ```
 
 ```text
-Generate basic unit tests for this helper function.
-Focus on happy path and edge cases.
+Generate table-driven unit tests for this pure helper. Cover documented boundaries
+and invalid input. Do not change production code or invent undocumented behavior.
 ```
 
 ```text
-Find obvious duplicated or redundant code in this snippet.
-Do not rewrite it yet.
+Classify these CI failures by likely component. Preserve each test name and error
+message, and mark ambiguous cases unknown.
 ```
 
-## When not to use small models
+## Escalate when the task changes
 
-Use a stronger model for:
+Use a stronger model, a specialist review, or smaller investigation steps when the
+task requires:
 
-- Architecture decisions
-- Security-sensitive code
-- Complex debugging
-- Production incident analysis
-- Multi-file refactoring
-- Implementation planning
+- Architecture or cross-system trade-offs
+- Security, privacy, financial, or destructive decisions
+- Reasoning across many unfamiliar files
+- Ambiguous requirements or conflicting evidence
+- Complex debugging, concurrency, migration, or incident analysis
+- A final review where a missed defect would be expensive
+
+Model size does not replace verification. Review generated output and run the same
+checks regardless of which model produced it.

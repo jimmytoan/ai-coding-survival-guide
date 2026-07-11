@@ -1,78 +1,107 @@
 # FAQ
 
-## Is this repo anti-GitHub Copilot?
+## Is this guide anti-AI coding?
+
+No. It is pro-useful AI and anti-unverified output, uncontrolled scope, needless usage, and avoidable review burden.
+
+## What is the default workflow?
+
+Frame the task, inspect evidence, plan in proportion to risk, implement a small coherent change, verify it, review the actual diff, and hand off limitations honestly.
+
+See [A Reliable AI Coding Workflow](ai-coding-workflow.md).
+
+## Should I always ask for a plan?
 
 No.
 
-This repo is pro-effective AI coding.
-
-The GitHub Copilot pricing debate is the trigger, but the lesson applies to many AI coding tools.
-
-## Is usage-based billing bad?
-
-Not necessarily.
-
-A short autocomplete and a long agentic coding session do not have the same cost.
-
-Usage-based billing can be reasonable if users have good visibility, prediction, budgets, and control.
-
-## Should I stop using AI coding assistants?
-
-No.
-
-Use them better.
-
-AI coding tools can save real time when used well.
+- For a clear, local, reversible edit: implement and verify directly.
+- For an ambiguous or multi-component change: inspect, then make a short evidence-backed plan.
+- For a migration, destructive action, external side effect, or high-risk boundary: plan stages, rollback, approvals, and verification explicitly.
 
 ## Should I always use the cheapest model?
 
-No.
+Use the least costly configuration that meets a measured quality target reliably. Escalate when deeper reasoning is the bottleneck, not when requirements or evidence are missing.
 
-Use the cheapest model that can reliably solve the task.
-
-Use stronger models when mistakes are expensive.
+High-risk changes need tests, tools, and qualified human review regardless of model. See [Model Selection](model-selection.md).
 
 ## Should I avoid agent mode?
 
-No.
+No. Agent mode is valuable when it can inspect, edit, and verify a well-scoped task. Match permissions and checkpoints to reversibility and blast radius.
 
-Agent mode is useful for clear, scoped tasks.
+See [Agent Mode](agent-mode.md).
 
-Avoid using it for tiny tasks or vague “fix everything” requests.
+## Does more context always improve the answer?
 
-## I'm on a flat subscription (Claude Max / Codex Pro). Why optimize at all?
+No. Necessary evidence helps; stale and irrelevant material competes with it. Start with a complete task packet and retrieve outward through entry points, tests, callers, and contracts.
 
-Because the meter isn't dollars — it's **throttling**. Both tools cap you with a 5-hour rolling window *and* a weekly limit. Wasting tokens on noisy logs, oversized models, or stale context means you hit that cap sooner and get locked out (or pushed onto pay-as-you-go credits) right when you need the tool for real work. Optimizing buys you **more useful work per window**. See the [Token Optimization Playbook](token-optimization-playbook.md), plus [Claude Code](claude-code-optimization.md) and [Codex](codex-optimization.md) specifics.
+See [Context Discipline](context-discipline.md).
 
-## What is context discipline?
+## Do project instruction files consume tokens?
 
-Context discipline means giving the assistant enough information to solve the task, but not dumping unnecessary context into the model.
+They consume context capacity and can increase usage. Exact accounting depends on the client, caching, and plan. Keep durable commands and invariants concise, scope specialized guidance close to the work, and enforce mechanical rules in tools.
 
-## Do MCP servers cost tokens even when I do not use them?
+See [Project Context Files](project-context-files.md).
 
-They can. Each connected server's tool definitions may be loaded into context — historically on every request — and a few popular servers can total tens of thousands of tokens. Newer clients defer tool definitions (load names only until a tool is used), which helps a lot, but connecting only what you need still matters. See [MCP and Tool Overhead](mcp-and-tool-overhead.md).
+## Do MCP servers consume tokens when unused?
 
-## Does my CLAUDE.md / rules file cost tokens?
+They can. Some clients load schemas up front; others defer full definitions until selected. Names, discovery, tool calls, and results still have overhead, and permissions remain important.
 
-Yes. Project rule files are loaded at session start and carried on every turn, so a long one is a tax on every message — even unrelated ones. Keep it to genuine essentials and move occasional runbooks into on-demand skills or commands. See [Project Context Files](project-context-files.md).
+Measure your client, enable only needed tools, and filter results before model ingestion. See [MCP and Tool Overhead](mcp-and-tool-overhead.md).
 
-## Do parallel agents save money?
+## Do subagents save tokens?
 
-No — they multiply it. Each subagent has its own context window, so running several in parallel costs more in total even though it finishes faster. Subagents *do* save tokens when used to isolate noisy output (tests, logs) from your main conversation. See [Subagents and Agent Teams](subagents-and-agent-teams.md).
+They can protect the parent conversation from noisy context and reduce later parent usage, but the worker performs additional model work. Total usage often rises. Parallel workers primarily buy speed; independent workers can buy review diversity.
+
+See [Subagents and Agent Teams](subagents-and-agent-teams.md).
+
+## How do I know generated code is correct?
+
+You do not know from the response alone. Establish a baseline, run deterministic checks, add behavior-oriented tests, inspect every changed file, validate manual or operational behavior where relevant, and report skipped checks.
+
+See [Verification and Testing](verification-and-testing.md).
+
+## Can AI review its own code?
+
+It can find some issues, but an authoring context shares assumptions with its implementation. For meaningful work, use a fresh review context with the original requirement and actual diff. Critical code also needs the appropriate human specialist.
+
+See [Reviewing AI-Generated Code](reviewing-ai-generated-code.md).
+
+## What should I never share with an AI coding tool?
+
+Follow your organization's approved-tool and data-classification policy. Do not paste live secrets. Be careful with personal, regulated, customer, production, confidential, and contract-restricted data. Redact attachments and tool output as well as prompts.
+
+See [Security and Privacy](security-and-privacy.md).
+
+## Can repository text attack an agent?
+
+Yes. Issues, docs, comments, logs, web pages, images, and tool results can contain instructions aimed at the model. Treat retrieved content as untrusted data, use least privilege, and require approval for sensitive actions.
+
+## How do I avoid hallucinated packages and APIs?
+
+Inspect installed versions, verify exact names and signatures in primary sources, review lockfile changes, and run a minimal compile or behavior check. Never install a plausible package name just to see whether it exists.
+
+See [Dependencies and API Research](dependencies-and-api-research.md).
+
+## I have a flat subscription. Why optimize usage?
+
+Subscriptions can still have session, weekly, fair-use, or feature limits. Waste may appear as throttling or reduced access rather than an invoice. Model, context, tools, and output also affect latency and review burden.
+
+See the [Token Optimization Playbook](token-optimization-playbook.md), [Claude Code](claude-code-optimization.md), and [Codex](codex-optimization.md) guides.
+
+## Is usage-based billing bad?
+
+Not inherently. A short completion and an autonomous multi-step task use different resources. What matters is visibility, budgets, controls, data terms, and value per verified outcome.
+
+## How should a team measure success?
+
+Measure verified and first-pass success, human review and rework, lead time, escaped defects, total provider usage, and policy exceptions by task type and risk. Do not optimize prompt count or generated lines.
+
+See [Cost and Outcome Observability](cost-observability.md).
 
 ## What is the Max Power way?
 
-It is a joke from The Simpsons:
-
-> “Isn't that the wrong way?”  
-> “Yeah, but faster!”
-
-In AI coding, it means using powerful tools carelessly to create faster waste.
+It is a joke from *The Simpsons*: doing something the wrong way, but faster. In AI coding it means using powerful automation to create unscoped, unverified changes faster.
 
 ## What is the main takeaway?
 
-The future is not “use less AI.”
-
-The future is:
-
-> Use AI better.
+Use AI to accelerate disciplined engineering. Define success, preserve human ownership, and require evidence before trust.

@@ -1,126 +1,138 @@
-# Good vs Bad Prompts
+# Weak vs Useful Prompts
 
-## Example 1: Repo review
+A useful prompt supplies an outcome, boundary, evidence, and expected response. It
+does not need to be long.
 
-Bad:
+## 1. Repository review
+
+Weak:
 
 ```text
 Review this whole repo and tell me what to improve.
 ```
 
-Better:
+Useful:
 
 ```text
-Review only src/auth/session.ts and src/api/login.ts.
+Start with src/auth/session.ts and src/api/login.ts. Inspect direct callers and
+tests needed to trace the behavior, but do not scan unrelated areas.
 
-Goal:
-Find why users are logged out after token refresh.
-
-Do not edit files yet.
-
-Output:
-- Likely causes
-- Evidence
-- Recommended next step
+Goal: find why a successful token refresh still logs users out.
+Do not edit files. Trace the failing path and return findings with file/line
+evidence, the most likely cause, and the smallest next diagnostic step.
 ```
 
-Why better:
+Why it works: it narrows context, defines the failure, and asks for evidence before
+implementation.
 
-- Smaller context
-- Clear goal
-- No unnecessary implementation
-- Easier to review
+## 2. Feature implementation
 
-## Example 2: Implementation
-
-Bad:
+Weak:
 
 ```text
-Build the whole billing alert feature.
+Build the billing alert feature.
 ```
 
-Better:
+Useful:
 
 ```text
-Create an implementation plan first.
+Plan only; do not write code.
 
-Goal:
-Add AI usage budget alerts.
+Goal: warn at 70% and 90% of workspace budget, then block non-admin generation at
+100%. Admin overrides must be audited. Read-only chat must remain available.
 
-Requirements:
-- Warn at 70%
-- Warn at 90%
-- Block non-admin users at 100%
-- Admins can override
-- Usage events must be auditable
-
-Do not write code yet.
+Identify the existing usage and authorization paths, list assumptions, propose
+small implementation checkpoints, and include tests, rollout, and rollback.
 ```
 
-Why better:
+Why it works: observable behavior and non-goals make trade-offs reviewable before
+the assistant creates a large diff.
 
-- Forces planning
-- Reduces random code generation
-- Makes trade-offs visible
+## 3. Refactoring
 
-## Example 3: Refactoring
-
-Bad:
+Weak:
 
 ```text
 Refactor this module and make it cleaner.
 ```
 
-Better:
+Useful:
 
 ```text
-Suggest cleanup for this module.
+Suggest behavior-preserving cleanup for src/parser.ts. Do not edit it.
 
-Rules:
-- Do not change behavior.
-- Do not introduce new abstractions unless necessary.
-- Identify duplicated or redundant code.
-- Suggest changes in small steps.
-
-Do not write code yet.
+Use the existing tests as the behavior contract. Identify concrete duplication or
+complexity, explain each proposed change, and skip abstractions that have only one
+caller. Flag any behavior you cannot prove from tests or call sites.
 ```
 
-Why better:
+Why it works: “cleaner” becomes a constrained review rather than permission to
+redesign the module.
 
-- Prevents over-engineering
-- Keeps review manageable
-- Avoids surprise behavior changes
+## 4. Debugging
 
-## Example 4: Agent mode
-
-Bad:
+Weak:
 
 ```text
-Use agent mode and fix all failing tests.
+The CI test is flaky. Fix it.
 ```
 
-Better:
+Useful:
 
 ```text
-First inspect the failing test output.
+Investigate, but do not edit yet.
 
-Output:
-- Which tests are failing
-- Most likely root cause
-- Files likely affected
-- Minimal fix plan
-
-Do not edit files yet.
+The checkout test failed 3 of 20 Linux CI runs with the attached timeout. It has
+not failed locally. Inspect the test, its production path, and the smallest useful
+log excerpt. Rank race, clock, network, and shared-state hypotheses by evidence.
+Propose one experiment that can distinguish the top two causes.
 ```
 
-Why better:
+Why it works: frequency and environment matter for intermittent failures, and the
+requested experiment avoids a guess-based patch.
 
-- Avoids blind edits
-- Reduces unnecessary file changes
-- Keeps the human in control
+## 5. Test generation
+
+Weak:
+
+```text
+Add lots of tests for this class.
+```
+
+Useful:
+
+```text
+Add focused tests for the public behavior changed in this diff.
+
+Cover the success path, invalid input, downstream failure, and the reported
+regression. Do not expose private methods or weaken assertions. If expected
+behavior is unclear, stop and list the ambiguity before changing tests.
+```
+
+Why it works: tests protect behavior instead of implementation details or a coverage
+number.
+
+## 6. Verification
+
+Weak:
+
+```text
+Looks good, right?
+```
+
+Useful:
+
+```text
+Verify without editing. Map each acceptance criterion to the diff and direct test
+evidence. Run the focused checks, report exact commands and results, and mark
+anything not demonstrated as not verified. Check for unrelated changes and likely
+regressions before giving a verdict.
+```
+
+Why it works: it asks the assistant to challenge the result and prevents a summary
+from being mistaken for proof.
 
 ## Key takeaway
 
-A good prompt narrows the job.
-
-A bad prompt creates a larger mess at higher speed.
+State the outcome, scope, constraints, evidence, and desired response. Add detail
+only when it changes the assistant's decision.

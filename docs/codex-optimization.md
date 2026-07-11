@@ -1,109 +1,151 @@
-# Codex Optimization (ChatGPT / Codex Pro)
+# Codex Optimization
 
-> **TL;DR** On **ChatGPT / Codex Pro** (~$100 = "5×", ~$200 = "20×") your bill is fixed — what you are protecting is your **5-hour message window** and **weekly cap**. The highest-leverage Codex moves: make a **cheaper model the default profile** and opt into the strong one explicitly, tune **`model_reasoning_effort`**, keep junk out of context with **`.codexignore`**, keep **`AGENTS.md`** small and nested, and **`/compact`** before the window fills.
+> Last verified: **2026-07-11**. Codex models, plans, limits, and configuration change frequently; check the linked official pages and your local `codex --help` before copying settings.
 
-This is the Codex companion to the cross-tool [Token Optimization Playbook](token-optimization-playbook.md). The durable *why* lives in the playbook; this collects Codex-specific knobs.
+Optimize Codex for successful, reviewable tasks per unit of time and usage. The highest-leverage habits are clear acceptance criteria, focused context, matched model/reasoning, safe permissions, executable verification, and review of the actual diff.
 
-> Codex moved to API-token-aligned usage in 2026, but for Pro subscribers the day-to-day meter is still the **5-hour rolling window** (counted in messages/compute) plus a **weekly cap**. Check **`/status`** for where you stand.
+## Understand the current meter
 
-## How Codex Pro meters you
+For ChatGPT plans, Codex usage depends on model, context, reasoning, and tools.
 
-- **5-hour rolling window** — local messages and cloud tasks share it; resets ~5 hours after your first message.
-- **Weekly cap** — stacks on top, resets on a rolling 7-day basis from your first message of the week.
-- **Tiers** — Plus is the entry tier; **Pro ~$100 is 5×**, **Pro ~$200 is 20×**.
-- **Overflow** — credits let you continue at API rates after you hit the cap; eligible plans also have rate-limit reset *banking* (a small number of resets you can hold for ~30 days).
+- Local messages and cloud tasks share a five-hour window.
+- Additional weekly limits may apply; do not assume a universal reset schedule.
+- Plus and Pro tiers have different included capacity; current Pro offerings include 5× and 20× tiers.
+- Plus and Pro users can use purchased credits after included limits are reached.
+- API-key usage is usage-based rather than drawn from ChatGPT plan limits.
+- Current limits are visible in the Codex usage dashboard and via `/status` in an active CLI session.
 
-## Default to a cheaper model with named profiles
+Use the live dashboard as the source of truth. Plan names, rates, and available models are volatile.
 
-The single most effective Codex habit: make the cheap model the **default** and require an explicit opt-in for the expensive one. Set this in `~/.codex/config.toml`:
+## Route routine and difficult work differently
+
+Use the least costly available model that meets a measured quality bar for the task.
+
+- Routine search, explanation, formatting, and local edits often fit an economical model and lower reasoning.
+- Cross-cutting diagnosis, architecture, migrations, and subtle review may justify a more capable model or higher effort.
+- High-risk work also requires tests, scanners, and qualified human review; model strength is not a safety control.
+
+Change one dimension deliberately. If an attempt fails because the requirement or evidence is incomplete, a more expensive model may repeat the same mistake.
+
+## Use current profile files
+
+Codex profiles are separate files in `CODEX_HOME` (normally `~/.codex`) and are selected explicitly.
+
+Base defaults:
 
 ```toml
-[profiles.explore]            # the default — cheap, for search/edits/triage
-model = "<cheap-model>"
+# ~/.codex/config.toml
+model = "<routine-model>"
 model_reasoning_effort = "low"
-max_tokens_per_session = 100000
-
-[profiles.commit]             # opt into this for real implementation
-model = "<strong-model>"
-model_reasoning_effort = "high"
-max_tokens_per_session = 300000
-
-default_profile = "explore"
 ```
 
-Then escalate only when the task earns it:
+Higher-effort profile:
+
+```toml
+# ~/.codex/deep-review.config.toml
+model = "<review-model>"
+model_reasoning_effort = "high"
+approval_policy = "on-request"
+```
+
+Run it with:
 
 ```bash
-codex --profile commit "implement the auth flow"
+codex --profile deep-review
+codex exec --profile deep-review "review this change"
 ```
 
-The reported cost ratio between mini-class and full-class models is roughly **5×** — the most important number in Codex usage management. Most search, formatting, and single-file work does not need the big model. See [Model Selection](model-selection.md).
+Since Codex 0.134, legacy `[profiles.<name>]` tables and a top-level profile selector are no longer supported. Do not use old examples containing `default_profile` or `[profiles.*]`.
 
-## Tune reasoning effort
+Supported reasoning values are model-dependent. The current config reference documents `minimal`, `low`, `medium`, `high`, and `xhigh`, with `xhigh` available only on some models.
 
-`model_reasoning_effort` controls how many reasoning tokens Codex spends:
+## Keep `AGENTS.md` useful and scoped
 
-- `"low"` — formatting, deterministic transforms, simple reviews, triage.
-- `"high"` — security audits, novel algorithms, complex multi-file diagnosis.
+Use `AGENTS.md` for durable repository facts:
 
-Match reasoning depth to task complexity rather than running one setting all session. A common pattern is two profiles (`cheap` vs `frontier`) selected with `--profile`.
+- Canonical build, test, lint, and type-check commands
+- Important domain and architecture invariants
+- Generated-file rules
+- Approval boundaries
+- Verification expected before handoff
 
-## Keep junk out of context: `.codexignore`
+Codex discovers instructions from the project root down to the working directory. Nested guidance can specialize a subtree, and `AGENTS.override.md` takes precedence in its directory. Current Codex uses a combined default instruction limit of 32 KiB, configurable with `project_doc_max_bytes`.
 
-A maintained `.codexignore` keeps the agent from pulling build artifacts and vendored code into context:
+Keep instructions concrete. Move long, occasional workflows into on-demand guides or skills, and let formatters and CI enforce mechanical rules.
 
-```
-node_modules/
-dist/
-build/
-*.lock
-__pycache__/
-.git/
-```
+See [Project Context Files](project-context-files.md).
 
-On large repos this is reported to cut input tokens **40–60%** — context you were re-sending every turn for no benefit.
+## Manage context by task
 
-## Keep `AGENTS.md` small and nested
+- Start with outcome, acceptance criteria, constraints, entry points, and verification.
+- Let Codex inspect callers and tests needed for correctness; avoid arbitrary file caps.
+- Keep unrelated work in a fresh task.
+- Use `/compact` at a coherent boundary when a long task must continue.
+- After compaction, reopen critical files and re-run relevant checks because summaries are lossy.
+- Filter large logs and tool results before they enter model context.
+- Disable unused MCP servers; each server can add context and tool-selection work.
 
-`AGENTS.md` is loaded into context like Claude's `CLAUDE.md`, so the same rule applies: essentials only.
+There is no currently documented `.codexignore` feature. Use repository structure, focused prompts, search filters, and client-supported configuration rather than relying on an invented ignore file.
 
-- Prefer **nested `AGENTS.md`** in subdirectories (targeted context) over one monolithic project-wide file. Keep each small (a couple of KiB).
-- Put output discipline here so it applies every turn:
+## Configure permissions for the task
 
-  ```
-  ## Output style
-  - Reply in unified diff form. No full-file rewrites unless asked.
-  - No preamble, no trailing summary.
-  ```
+Codex separates approval policy from sandbox and network configuration. Prefer the narrowest combination that still lets the task finish.
 
-- Add a rule to prefer quiet output for noisy commands (filter `test`/`build`/`status` down to failures) — engineers report **60–90%** reductions on dev-loop output. A wrapper tool or a `prefer <command>` instruction in `AGENTS.md` both work. See [Project Context Files](project-context-files.md).
+- Use workspace-scoped writes for normal repository work.
+- Keep network access disabled until a task requires it.
+- Ask before installs, public API changes, destructive operations, deployments, messages, or external writes.
+- Use project `.codex/config.toml` only for trusted repositories; project layers load only after trust is established.
+- Keep production credentials out of the agent environment.
 
-## Manage the session
+Never solve an approval inconvenience by broadly disabling the sandbox without understanding the environment.
 
-- **`/compact`** replaces detailed history with a summary (~30–50% context reduction). Run it around **~60% full** rather than waiting for forced compaction, which loses more detail.
-- **Work iteratively on the same files** so prompt caching keeps hitting; jumping between unrelated areas of the repo breaks the cached prefix.
-- **`/status`** — check cumulative usage during a session so you don't blow the window unaware.
-- **Cap the session** with `max_tokens_per_session` so a runaway debugging loop on a big legacy repo can't quietly drain your window in one sitting.
+## Make verification executable
 
-## Delegate verbose operations to subagents
+Give Codex the repository's exact checks and require it to report results:
 
-File-heavy or noisy operations (test runs, log scans) belong in a subagent so the output stays in the subagent's context and only a summary returns to the main session — keeping the orchestrator's window small. See [Subagents and Agent Teams](subagents-and-agent-teams.md).
+- Focused regression test
+- Type, lint, and build checks
+- Integration or manual flow when relevant
+- Checks not run and why
+- Remaining risk
+
+Review the actual Git diff after the edit. Asking for a unified diff in the response is unnecessary when Codex already changed files; a concise handoff plus the real diff is clearer.
+
+Codex's review workflow can inspect uncommitted changes, a base-branch diff, or a commit without modifying the worktree. Use a fresh review context for meaningful changes to reduce shared assumptions.
+
+## Use subagents for a reason
+
+Subagents can isolate noisy research, specialize a review, or run independent work in parallel. They have their own context and usage.
+
+- Prefer deterministic filtering before spawning a model only to summarize command output.
+- Give workers bounded objectives and exclusive edit scopes.
+- Use parallelism for wall-clock speed, not presumed total-token savings.
+- Reconcile findings and run final verification centrally.
+
+See [Subagents and Agent Teams](subagents-and-agent-teams.md).
 
 ## Quick checklist
 
-- [ ] `default_profile` points at the cheap model
-- [ ] Reasoning effort matched to the task
-- [ ] `.codexignore` covers build artifacts and vendored code
-- [ ] `AGENTS.md` small, nested, with output-style rules
-- [ ] Noisy commands filtered to failures
-- [ ] `/compact` run before the context fills; iterating on the same files
-- [ ] `/status` checked for window/weekly headroom
+- [ ] Task has observable acceptance criteria
+- [ ] Model and reasoning match difficulty and risk
+- [ ] Current profile syntax is used
+- [ ] `AGENTS.md` contains concise, scoped invariants and commands
+- [ ] MCP and network access are limited to what the task needs
+- [ ] Permissions require approval at meaningful boundaries
+- [ ] Large tool output is filtered
+- [ ] Exact checks and results are reported
+- [ ] Actual diff is reviewed in fresh context for meaningful changes
+- [ ] `/status` or the usage dashboard was checked when capacity matters
 
 ## Sources
 
-- OpenAI Developers — *Codex pricing*: <https://developers.openai.com/codex/pricing>
-- OpenAI Developer Community — *Understanding the new Codex limit system*: <https://community.openai.com/t/understanding-the-new-codex-limit-system-after-the-april-9-update/1378768>
-- Codex Knowledge Base — *Codex CLI cost management: token strategy, model routing and quota control*: <https://codex.danielvaughan.com/2026/03/28/codex-cli-cost-management-token-strategy/>
-- AutoScout24 Engineering — *3 techniques to reduce token consumption (Claude Code & Codex)*: <https://tech.autoscout24.com/blog/posts/3-techniques-to-reduce-token-consumption-claude-code-codex/>
+- OpenAI — [Codex pricing and limits](https://learn.chatgpt.com/docs/pricing)
+- OpenAI — [Advanced configuration: profiles](https://learn.chatgpt.com/docs/config-file/config-advanced#profiles)
+- OpenAI — [Configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)
+- OpenAI — [Custom instructions with `AGENTS.md`](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+- OpenAI — [Code review](https://learn.chatgpt.com/docs/code-review)
+- OpenAI — [Sandboxing and approvals](https://learn.chatgpt.com/docs/sandboxing)
 
-*Model names, tiers, and limits change frequently; the config knobs (profiles, reasoning effort, `.codexignore`, `AGENTS.md`) are the durable part. Check `/status` for current usage.*
+## Key takeaway
+
+Codex is most efficient when the task is well-defined, access is bounded, context is focused, and completion is proven by tools and the real diff.

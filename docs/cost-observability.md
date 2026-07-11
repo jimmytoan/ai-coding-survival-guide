@@ -1,124 +1,167 @@
-# Cost Observability for AI Coding
+# Cost and Outcome Observability
 
-AI coding cost should be measured by useful outcome, not only by prompt count.
+AI coding cost includes provider usage, latency, human review, rework, and risk. Measure the whole task from brief to accepted, verified result.
 
-A cheap prompt that creates bad code is expensive.
+> A cheap wrong answer is expensive. An expensive call that prevents an incident can be efficient.
 
-An expensive model call that prevents a production incident may be cheap.
+## Separate the meters
 
-## What to measure
+Record which constraint you are measuring:
 
-Track:
+- API spend
+- Product credits
+- Included subscription allowance
+- Rate-limit or capacity exhaustion
+- Wall-clock latency
+- Developer interaction time
+- Review and rework time
+- Operational impact
 
-- Tool used
-- Model used
-- Task type
-- Context size
-- Agent mode on/off
-- Estimated cost
-- Time saved
-- Output accepted
-- Review effort
-- Bugs introduced
-- Rework required
-- Notes
+Do not convert all of these into a fictional token price. Product plans account for usage differently.
 
-Use: [Benchmark Template](../benchmarks/benchmark-template.csv)
+## Record the task context
 
-## See it before you guess
+At minimum:
 
-Measuring outcomes is the goal, but most tools also expose the raw numbers — look at them instead of guessing:
+- Task category and risk level
+- Repository commit and environment
+- Tool, model, version, and reasoning setting
+- Agent, subagent, and external-tool use
+- Prompt/context policy
+- Expected acceptance and verification criteria
+- Whether this is a first attempt or follow-up
 
-- **Session usage** — many CLIs show token counts and an estimated cost for the current session (in Claude Code, `/usage`). Treat the dollar figure as an estimate computed locally, not a bill.
-- **What is in your context right now** — a context breakdown (`/context` in Claude Code) shows how much of the window is going to tool definitions, project files, history, and so on. This is where you catch a bloated MCP server or rules file. See [MCP and Tool Overhead](mcp-and-tool-overhead.md).
-- **Per-feature attribution** — newer tooling attributes usage to skills, subagents, plugins, and individual MCP servers, so you can tell whether an agent team or a connected server was actually worth it.
-- **Authoritative billing** — for real spend on usage-based plans, check the provider's console/usage page, not the local estimate.
+Without segmentation, a documentation edit and an authorization migration pollute the same average.
 
-For teams: provider consoles support workspace spend limits and per-developer cost reporting. If you route through an LLM gateway, it sees every request and is a natural place to track spend centrally.
+## Measure outcome quality
 
-## Useful metrics
+Useful metrics include:
 
-### Cost per accepted task
+### Correctness
+
+- Acceptance criteria satisfied
+- Public and hidden tests passed
+- First-pass success rate
+- Severity and count of review findings
+- Escaped defects, incidents, and rollbacks
+
+“Output accepted” is weaker than “output correct.” A developer may accept a result under time pressure or discover the defect later.
+
+### Human effort
+
+- Minutes preparing the task and context
+- Minutes reviewing the diff
+- Minutes correcting the result
+- Number of prompt or implementation iterations
+- Diff churn between first output and merge
+- Time to understand and confidently own the change
+
+### Delivery
+
+- Lead time from task start to verified result
+- Wall-clock agent time
+- Queue or throttling delay
+- Time waiting for CI or environments
+- Deployment and post-deploy validation time
+
+### Usage
+
+- Input, cached input, and output where exposed
+- Credits or included-limit consumption
+- Tool calls and large-result volume
+- Number of agents and total worker usage
+- Direct API or product cost
+
+### Maintainability and learning
+
+- Complexity and code volume added
+- New dependency count
+- Documentation and tests added
+- Follow-up work created
+- Whether the author can explain and operate the change
+
+## Calculate useful ratios carefully
+
+Examples:
 
 ```text
-total_ai_cost / accepted_outputs
+verified_task_success_rate = tasks_passing_acceptance_and_checks / tasks_attempted
 ```
-
-This is better than cost per prompt.
-
-### Time saved per dollar
 
 ```text
-estimated_minutes_saved / ai_cost
+first_pass_success_rate = tasks_passing_before_human_corrections / tasks_attempted
 ```
 
-Useful, but subjective.
+```text
+total_human_minutes = brief + interaction + review + rework
+```
 
-### Review burden
+```text
+cost_per_verified_task = total_provider_cost / verified_tasks
+```
 
-Track review effort:
+```text
+rework_ratio = lines_changed_after_first_candidate / final_lines_changed
+```
 
-- Low
-- Medium
-- High
+Use ratios as signals, not performance targets. They can be gamed by choosing easy tasks, skipping tests, or accepting larger defects.
 
-If AI saves coding time but creates high review burden, the net benefit may be low.
+## Compare with a baseline
 
-### Rework rate
+To know whether AI helped, compare with:
 
-Track how often AI output requires major changes.
+- The same developer or team doing matched tasks without AI
+- A previous period with similar task mix
+- Another model/tool using the same frozen task packet
+- A deterministic script or IDE feature for mechanical work
 
-High rework rate may mean:
+Control repository commit, environment, inputs, and acceptance checks. Run repeated trials because model output varies.
 
-- Wrong model
-- Too much context
-- Too little context
-- Poor task definition
-- Overuse of agent mode
-- Asking for code before plan
+See [Benchmarking AI Coding Tools](../benchmarks/README.md).
+
+## Use provider diagnostics
+
+Where available, inspect:
+
+- Live context breakdown
+- Session and plan usage
+- Model and reasoning selection
+- Agent and tool attribution
+- Provider billing or credit dashboard
+- Organization analytics and audit logs
+
+Use the provider's authoritative dashboard for actual billing. Client estimates and token counters can still help find waste inside a workflow.
 
 ## Warning signs
 
-You may have poor cost observability if:
+- Accepted-output rate is high but escaped defects rise.
+- Coding time falls while review time rises more.
+- Large diffs need several AI cleanup rounds.
+- Strong models are used for every task without better outcomes.
+- Subagents reduce latency but total usage is unknown.
+- Teams count prompts but not complete tasks.
+- Developers omit failed or abandoned sessions.
+- Security and production tasks are mixed with low-risk averages.
+- No non-AI or alternative-tool baseline exists.
 
-- Nobody knows which model they are using.
-- Developers cannot see approximate usage.
-- Agent mode is used without clear scope.
-- Large context scans happen silently.
-- Teams only discuss cost after budget is exhausted.
-- AI-generated diffs are large and difficult to review.
-- The same issue requires many “fix this” follow-up prompts.
+## Run a periodic review
 
-## Better questions
+By task type and risk, examine:
 
-Instead of asking:
+- Highest-value workflows
+- Highest-rework workflows
+- First-pass and verified success
+- Review findings and escaped defects
+- Model and reasoning distribution
+- Agent and tool use
+- Total human effort
+- Capacity or spend pressure
+- Incidents, near misses, and policy exceptions
 
-> Which AI tool is cheapest?
+Change one workflow variable at a time when possible. “Use less AI” and “use the biggest model” are both poor diagnoses.
 
-Ask:
-
-- Which tool solves our tasks with the least rework?
-- Which model gives the best cost/quality balance?
-- Which workflows should use small models?
-- Which workflows justify strong models?
-- Where do we need human approval?
-- Which agent tasks are worth the cost?
-
-## Suggested weekly review
-
-For teams adopting AI coding tools, review weekly:
-
-- Top AI use cases
-- Most expensive workflows
-- Most useful workflows
-- Tasks with high rework
-- Model usage distribution
-- Agent mode usage
-- Incidents or near misses
-- Policy changes needed
+Template: [AI Usage Retrospective](../templates/ai-usage-retro-template.md)
 
 ## Key takeaway
 
-AI coding cost is not just a finance problem.
-
-It is an engineering productivity signal.
+Measure verified outcomes, human effort, and risk alongside provider usage. Optimize the complete engineering system, not the prompt counter.

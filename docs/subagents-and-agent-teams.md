@@ -1,73 +1,150 @@
-# Subagents and Agent Teams: When Delegation Saves Tokens and When It Multiplies Them
+# Subagents and Agent Teams
 
-> **TL;DR** Subagents have two very different cost profiles. Used to **isolate verbose work** (running tests, reading logs, fetching docs), a subagent *saves* your main context — the noise stays in the subagent and only a summary comes back. Used to **run many agents in parallel** ("agent teams"), they *multiply* cost — each agent carries its own full context window, so a team can use several times the tokens of a single session (Anthropic reports roughly **7×** when teammates run in plan mode). Same feature, opposite economics. Know which one you are doing.
+Subagents can isolate context, specialize work, or run independent tasks in parallel. They usually trade more total model work for a cleaner orchestrator context, better specialization, or lower wall-clock time.
 
-This is the parallel-and-delegated extension of [Agent Mode](agent-mode.md). Agent mode is about delegating *one* job carefully; this is about what happens when you spawn *more agents*.
+> Context isolation is not the same as total token savings.
 
-## The two faces of subagents
+## Four useful patterns
 
-### Face 1 — Isolation: subagents that save context
+### 1. Context isolation
 
-Some work produces a lot of tokens you do not want in your main conversation: a 10,000-line test run, a noisy log file, a docs crawl. If the main agent does that work, all that output lands in your context and rides along on every later turn.
+A worker reads a large log, test run, documentation set, or repository area and returns a concise evidence-backed summary.
 
-Delegate it to a subagent instead. The verbose output stays in the **subagent's** context, and only a short summary returns to your main conversation. Your main window stays small and cheap.
+This protects the main conversation from noisy output and may reduce **future orchestrator** context. The worker still has its own input and output cost. If a deterministic filter can reduce the data before any model reads it, that is often cheaper.
 
-Good candidates for isolation:
+Use isolation when the summary will be reused or the raw material would materially degrade the main task.
 
-- Running a test suite and reporting only failures
-- Searching or summarizing large log files
-- Fetching and condensing external documentation
-- Broad codebase exploration where you only need the conclusion
+### 2. Specialization
 
-This is a net **win** for token discipline. It is the same instinct as [context discipline](context-discipline.md) — keep the expensive noise out of the conversation you keep paying for.
+Assign a bounded role with a distinct threat model or skill:
 
-### Face 2 — Parallelism: agent teams that multiply cost
+- Security review
+- Database migration analysis
+- Accessibility or visual QA
+- Test and failure triage
+- Current primary-source research
 
-Running several agents at once is the opposite trade. Each subagent has its **own context window**, and when it starts it loads its own context: instructions, project files (CLAUDE.md), MCP servers, skills, and whatever you put in the spawn prompt. That load costs tokens **every time a new agent spins up.**
+Specialization helps when the worker receives the right evidence and rubric. A role name alone does not create expertise.
 
-So four agents in parallel do not cost the same as one agent — they cost more in total, even though they finish sooner. Anthropic's docs note agent teams use **~7× more tokens** than a standard session when teammates run in plan mode, because each teammate is a separate instance maintaining its own window.
+### 3. Parallel execution
 
-Parallelism buys **wall-clock speed**, not token savings. That can absolutely be worth it — but it is a deliberate trade, not a free one.
+Run independent work at the same time:
 
-## When each is worth it
+- Separate modules with exclusive ownership
+- Independent research questions
+- Tests on independent platforms
+- Documentation and code changes that do not overlap
 
-| Situation | Reach for |
-| --- | --- |
-| Verbose op pollutes main context | **Isolation subagent** — saves tokens |
-| Several genuinely independent tasks, speed matters | **Parallel agents** — costs more, finishes faster |
-| Tasks depend on each other's output | **Sequential** — parallelism wastes spawns on stale context |
-| Tiny one-off task | **Neither** — normal chat or a single agent |
+Parallelism buys wall-clock speed. Each worker carries its own instructions and context, so total usage generally increases.
 
-## Keeping agent costs sane
+### 4. Independent review
 
-- **Match the model to the subagent.** A subagent doing mechanical work (running tests, renaming, mechanical edits) does not need a frontier model. Assign a cheaper, faster model (e.g. Haiku) to it and save the strong model for the orchestrator. See [Model Selection](model-selection.md).
-- **Keep spawn prompts focused.** Everything in the spawn prompt is context the subagent carries from token zero — and it *also* auto-loads CLAUDE.md, MCP servers, and skills. Pass only what the subagent needs to do its job.
-- **Keep teams small.** Token usage is roughly proportional to the number of active teammates. Two focused agents beat six vague ones.
-- **Shut teammates down when done.** An idle-but-alive teammate keeps consuming tokens until it exits or the session ends.
-- **Don't parallelize dependent work.** If task B needs task A's output, running them at once just means B started with the wrong context and has to be redone.
-- **Attribute the cost.** In Claude Code, `/usage` breaks recent usage down by subagents (and skills, plugins, MCP servers), so you can see whether a team was worth it.
+Give a fresh worker the original requirement and final diff, without the implementation conversation. This reduces shared-assumption bias and is often more valuable than asking the authoring agent to approve itself.
 
-## A quick decision check
+The reviewer should return evidence-backed candidate findings, not a blanket “looks good.”
 
-Before spawning agents, ask:
+## When not to spawn a worker
 
-1. Am I isolating noise (saves context) or chasing speed (multiplies cost)?
-2. Are these tasks actually independent?
-3. Can a cheaper model do the subagent's job?
-4. Is the time saved worth several times the tokens?
+Keep work in one agent when:
 
-If you cannot answer 1 clearly, you are probably about to pay agent-team prices for a job a single focused agent would do.
+- The task is small and coherent.
+- Each step depends on the previous result.
+- The spawn context is as large as the work itself.
+- Multiple workers would edit the same files.
+- A shell filter, parser, search, or test command can do the job deterministically.
+- No one will reconcile conflicting conclusions.
+
+Spawning an agent to run one short command and repeat its output is overhead, not delegation.
+
+## Design a good delegation packet
+
+Give each worker:
+
+- One concrete objective
+- Relevant inputs and trusted sources
+- Exact scope and file ownership
+- Expected output format
+- Verification or evidence requirements
+- Permission boundaries
+- Stop conditions
+- What not to do
+
+Example:
+
+```text
+Review the current auth diff for authorization regressions.
+
+Inputs:
+- Original acceptance criteria below
+- Current Git diff
+- src/auth/policy.ts and direct callers as needed
+
+Return only validated candidate findings with severity, file and line, reachable
+scenario, impact, and evidence. Do not edit files. Ignore style-only feedback.
+```
+
+Do not copy the entire main conversation by default. Pass the smallest complete task packet.
+
+## Prevent edit collisions
+
+Agents sharing a workspace can overwrite or invalidate one another's work.
+
+Use one of these strategies:
+
+- Assign mutually exclusive files or directories.
+- Give only one agent edit rights; others inspect and report.
+- Use isolated worktrees or branches, then integrate deliberately.
+- Sequence dependent changes.
+- Name an orchestrator that owns final reconciliation and verification.
+
+Every worker should preserve pre-existing user changes and avoid repository-wide formatting.
+
+## Choose models by role
+
+- Fast models can handle focused search, classification, formatting, and mechanical work.
+- Strong reasoning can help with orchestration, ambiguous diagnosis, and subtle review.
+- High-risk decisions still require deterministic checks and qualified human review.
+- A cheaper worker that repeatedly fails may cost more than one reliable pass.
+
+Benchmark recurring worker roles just like the main workflow.
+
+## Control fan-out
+
+Before parallelizing, ask:
+
+1. Are the tasks genuinely independent?
+2. Is the expected time saving useful?
+3. Will workers duplicate repository discovery?
+4. Are edit scopes exclusive?
+5. Can deterministic tooling replace any worker?
+6. Who reconciles results and resolves disagreement?
+7. What is the total usage budget?
+
+Start with the smallest team. Add a worker for a clear missing lane, not vague “more coverage.”
+
+## Reconcile and verify centrally
+
+The orchestrator should:
+
+- Check that every assigned task completed.
+- Validate material claims and citations.
+- Resolve contradictory recommendations.
+- Inspect the combined diff for collisions and scope creep.
+- Run final checks after all edits are integrated.
+- Report skipped verification and residual risk.
+
+Worker summaries are inputs to the final decision, not independent definitions of done.
+
+## Cost language to use accurately
+
+- **Protects main context:** raw worker output does not remain in the orchestrator thread.
+- **May lower future orchestrator usage:** later turns carry a short summary.
+- **Usually increases total compute:** another model instance did work.
+- **Reduces wall-clock time:** independent tasks ran concurrently.
+- **Can improve quality:** an independent or specialized pass found issues.
+
+Avoid claiming that subagents inherently save money or tokens without measuring the entire run.
 
 ## Key takeaway
 
-Subagents that absorb noise save you money.
-
-Subagents that run in parallel spend it faster to buy speed.
-
-Both are fine — as long as you know which one you just launched.
-
-## Sources
-
-- Claude Code Docs — *Manage costs effectively* (isolate high-volume operations; agent team ~7× token cost; subagent model selection): <https://code.claude.com/docs/en/costs>
-- Claude Code Docs — *Subagents*: <https://code.claude.com/docs/en/sub-agents>
-- Claude Code Docs — *Agent teams*: <https://code.claude.com/docs/en/agent-teams>
+Use subagents for isolation, specialization, parallel speed, or independent review. Define ownership, count total work, and verify the integrated result once.

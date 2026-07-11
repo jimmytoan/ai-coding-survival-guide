@@ -1,11 +1,16 @@
 # Debugging Prompt
 
-Use this for focused debugging.
+Use this to investigate a reproducible problem before changing code.
 
 ```text
-I am debugging this issue:
+Investigate this issue. Do not edit files yet.
 
-[Describe issue]
+Problem:
+[Describe the user-visible failure]
+
+Reproduction:
+1. [Step]
+2. [Step]
 
 Expected behavior:
 [Describe expected behavior]
@@ -13,21 +18,29 @@ Expected behavior:
 Actual behavior:
 [Describe actual behavior]
 
-Relevant files:
-[List files]
+Evidence:
+- Exact error or log excerpt: [Paste the smallest useful excerpt]
+- Frequency: [Always, intermittent, or unknown]
+- First known occurrence: [Version, commit, or date if known]
+- Environment: [Runtime, OS, browser, flags, or deployment]
 
-Recent changes:
-[List recent changes if known]
+Relevant context:
+- Files: [List]
+- Recent changes: [List]
+- Attempts already made: [List, including results]
+- Constraints: [What cannot change]
 
-Please inspect only the relevant context first.
+Investigation rules:
+- Inspect the narrowest relevant path first.
+- Separate observed facts from inferences.
+- Rank hypotheses by evidence, not convenience.
+- Prefer the smallest experiment that can eliminate a hypothesis.
+- Explain why additional files or tools are needed before expanding scope.
 
-Output:
-- Likely causes
-- Evidence from the code/logs
-- Most likely root cause
-- Suggested next debugging step
-- Minimal fix if clear
-
-Do not rewrite large parts of the code.
-Ask before inspecting more files.
+Return:
+1. Ranked hypotheses with supporting and contradicting evidence
+2. The next diagnostic step and its expected signal
+3. Most likely root cause, or what evidence is still missing
+4. Minimal fix direction if the cause is supported
+5. Regression tests and verification steps for that fix
 ```

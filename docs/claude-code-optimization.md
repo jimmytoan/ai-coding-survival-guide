@@ -1,73 +1,137 @@
-# Claude Code Optimization (Claude Max)
+# Claude Code Optimization
 
-> **TL;DR** On **Claude Max** (~$100 = "5×", ~$200 = "20×") you are not optimizing a bill — you are optimizing how much work fits inside your **5-hour window** and **weekly caps** before you get throttled. The highest-leverage moves: stay on **Sonnet** (it draws from a separate, larger weekly bucket than Opus), keep the cache **warm**, keep `CLAUDE.md` and MCP servers **lean**, and watch **`/usage`** and **`/context`** so you spend your window on real work.
+> Last verified: **2026-07-11**. Plan limits, model names, and commands can change; confirm them in Anthropic's current documentation and your local client.
 
-This is the Claude Code companion to the cross-tool [Token Optimization Playbook](token-optimization-playbook.md). It collects the Claude-specific knobs; the *why* lives in the linked deep-dive docs.
+Optimize Claude Code for useful, verified work within your plan or API budget. Focus first on task clarity, context quality, verification, and permissions; token savings that increase rework are false economy.
 
-## How Claude Max meters you
+## Understand the current limits
 
-Two layers, and a detail that matters:
+Claude subscription usage is affected by model, message length, files and conversation history, tool use, and the work Claude performs.
 
-- **5-hour rolling window** — short-burst activity, resets ~5 hours after your first message.
-- **Two weekly caps** — one across **all models**, and a separate, more generous one for **Sonnet only**. Staying on Sonnet literally draws from the bigger bucket.
-- **Shared pool** — usage counts across **Claude Code, Claude.ai chat, and Cowork** together. Heavy chat use eats into your coding capacity.
+Current Anthropic guidance describes:
 
-When you exhaust included usage, **usage credits** let you continue at standard API rates (consumption-based) — useful as overflow, but that is the moment "free" becomes per-token, so the warm-cache discipline below starts mattering for dollars too.
+- A session limit that resets after a usage window
+- Weekly limits with separate displays for **Opus-only** use and **all other models**
+- Shared usage across Claude surfaces associated with the account
+- Extra usage, where enabled, after included plan limits are exhausted
 
-## See where you stand
+Reset times and allowances vary by plan and account. Use the live usage view rather than a copied estimate.
 
-- **`/usage`** — token usage for the session plus, on paid plans, a breakdown of what counts against your limits, attributed to **skills, subagents, plugins, and individual MCP servers** (`d`/`w` toggles 24h vs 7d).
-- **`/context`** — what is filling your window *right now*: system prompt, tool definitions, memory files, history. This is where you catch a bloated `CLAUDE.md` or an MCP server you forgot you connected.
-- **Status line** — configure it to show context-window usage continuously so you compact/clear before you're forced to.
-- **Settings → Usage** — progress bars for your 5-hour and weekly limits.
+## Inspect usage and context
 
-## Model & reasoning
+- Use `/usage` or the plan's usage page to see current allowance and reset information.
+- Use `/context` to inspect what occupies the current context window.
+- Watch for large conversation history, project instructions, tool definitions, and raw command output.
+- Treat local dollar estimates as estimates; the provider console is authoritative for API spend.
 
-- **Default to Sonnet.** It handles most coding work, costs less, and draws from the larger Sonnet-only weekly cap. Switch with `/model`; set a default in `/config`.
-- **Reserve Opus** for architecture, multi-step reasoning, and hard debugging.
-- **Right-size effort.** Extended thinking bills as output. Lower it with `/effort` (or in `/model`) for simple tasks; on fixed-budget models use `MAX_THINKING_TOKENS`. See [Model Selection](model-selection.md).
-- **Use `model: haiku` for mechanical subagents** (running tests, renames). See [Subagents and Agent Teams](subagents-and-agent-teams.md).
+## Match model and effort to the task
 
-## Context hygiene
+- Use a balanced model for normal repository work.
+- Reserve the highest-capability model and higher effort for problems where deeper reasoning changes the result.
+- Use a fast model for focused mechanical subagents when it meets the quality bar.
+- Escalate after identifying a reasoning bottleneck; missing requirements and missing evidence need better input, not only a stronger model.
 
-- **`/clear` between unrelated tasks.** Stale context is re-sent every message. `/rename` before clearing so you can `/resume` later.
-- **Compact early and warm.** `/compact` at a natural break (optionally `/compact Focus on the failing tests and changed files`). Doing it warm is cheap; doing it after a long idle gap reprocesses your whole history. See [Compaction and the Prompt Cache](compact-and-caching.md).
-- **Keep the cache warm.** Set your model and connect MCP servers at the *start* of a session — switching model or MCP mid-task invalidates the cache. On Max you get the 1-hour TTL automatically.
-- **Keep `CLAUDE.md` under ~200 lines.** It loads every session. Move specialized runbooks (migrations, releases) into **skills** that load on demand. See [Project Context Files](project-context-files.md).
+Security-sensitive and production work still requires deterministic checks and qualified human review.
 
-## Tools & MCP
+## Keep context coherent
 
-- **MCP tool definitions are deferred by default** — only tool names enter context until a tool is used. Still, connect only what you need; `/mcp` lists servers and lets you disable unused ones.
-- **Prefer a CLI when one exists** (`gh`, `aws`, `gcloud`) — no per-tool listing overhead. See [MCP and Tool Overhead](mcp-and-tool-overhead.md).
-- **Code intelligence plugins** give precise symbol navigation instead of grep-then-read-many-files.
+- One objective per session is a useful default.
+- Start fresh when switching to unrelated work.
+- Give a task brief with expected behavior, acceptance criteria, constraints, and verification.
+- Filter large logs and test output before model ingestion.
+- Compact at a coherent milestone when the task must continue in the same session.
+- Treat compaction summaries as lossy: preserve rejected approaches, reopen critical files, and rerun relevant checks.
 
-## Agents & verbose output
+Claude Code uses prompt caching to reduce repeated processing of stable prefixes. Subscription authentication currently receives a one-hour cache duration by default, while API and third-party provider behavior can differ. See [Compaction and Prompt Caching](compact-and-caching.md).
 
-- **Plan mode (Shift+Tab)** before big changes — approving a plan is cheaper than unwinding a wrong path. Stop early with Escape; `/rewind` to a checkpoint instead of compounding a mistake.
-- **Isolate verbose ops in subagents** so a 10,000-line test log stays in the subagent and only a summary returns.
-- **Filter command output with a hook.** A `PreToolUse` hook can rewrite `npm test` / `pytest` to show only failures — turning tens of thousands of tokens into hundreds. See the [cost docs](https://code.claude.com/docs/en/costs) for a ready example.
-- **Be wary of agent teams** — each teammate is a separate instance with its own window (~7× a normal session in plan mode). Keep teams small and shut them down when done.
+## Keep `CLAUDE.md` focused
 
-## Write efficient prompts
+Anthropic recommends keeping `CLAUDE.md` concise—roughly under 200 lines—and moving specialized workflows into skills that load on demand.
 
-- Specific beats broad: "add input validation to `login()` in `auth.ts`" reads a couple of files; "improve this codebase" triggers a broad, window-draining scan.
-- Give verification targets (test cases, expected output) so Claude catches its own mistakes instead of you paying for fix-up rounds.
-- Ask for diffs and terse output; cap with `CLAUDE_CODE_MAX_OUTPUT_TOKENS` if needed.
+High-value content:
+
+- Build, test, lint, and type-check commands
+- Critical domain and architecture invariants
+- Generated-file rules
+- Verification and approval expectations
+
+Move long release, migration, and incident runbooks out of always-on context. Use deterministic tooling for formatting and other mechanical rules.
+
+See [Project Context Files](project-context-files.md).
+
+## Use MCP and tools deliberately
+
+Claude Code defers MCP tool definitions by default on supported models. With deferred loading, connecting or disconnecting a server can append tool information without invalidating the existing cached prefix.
+
+Full schema changes can still disturb caching when tools are loaded up front—for example with an unsupported model/provider, disabled tool search, or an `alwaysLoad` configuration.
+
+Regardless of cache behavior:
+
+- Enable only the servers needed for the task.
+- Prefer least-privilege, read-only scopes for investigation.
+- Filter tool results before they enter context.
+- Choose CLI, MCP, or connector based on permissions, auditability, structure, and measured overhead.
+- Treat returned content as untrusted input.
+
+See [MCP and Tool Overhead](mcp-and-tool-overhead.md).
+
+## Use agent mode with boundaries
+
+- Use plan mode for ambiguous, cross-cutting, destructive, or high-risk changes—not as ceremony for every edit.
+- Define what the agent may edit, run, and access.
+- Require approval for installs, external actions, destructive commands, production data, and broad permission changes.
+- Use subagents for context isolation, specialization, independent review, or parallel speed.
+- Count total worker use; protecting the parent context does not automatically reduce total tokens.
+- Give parallel editors exclusive file ownership or isolated worktrees.
+
+See [Agent Mode](agent-mode.md) and [Subagents and Agent Teams](subagents-and-agent-teams.md).
+
+## Filter noisy commands
+
+Hooks, wrapper scripts, focused test selection, and structured command options can keep thousands of irrelevant lines out of context.
+
+Preserve:
+
+- The exact command and exit status
+- Failing test names or diagnostics
+- Enough surrounding lines to understand the cause
+- A path to the complete artifact when needed
+
+Do not rely on universal percentage-savings claims; measure your own workflow.
+
+## Verify and review
+
+Give Claude executable completion criteria:
+
+- Focused regression test
+- Build, type, lint, and static checks
+- Integration or manual flow based on risk
+- Exact command results and skipped checks
+- Review of every changed file, including tests and configuration
+
+For meaningful changes, use a fresh review context with the original requirement and actual diff. The authoring session's summary can share the implementation's blind spots.
 
 ## Quick checklist
 
-- [ ] On Sonnet unless this task truly needs Opus
-- [ ] Effort matched to task difficulty
-- [ ] `/context` checked — no surprise MCP server or fat `CLAUDE.md`
-- [ ] One task this session; `/clear` since last unrelated one
-- [ ] Compacted at the last natural break (warm)
-- [ ] Verbose commands filtered to failures
-- [ ] Plan mode used for the risky multi-file change
+- [ ] Goal and acceptance criteria are explicit
+- [ ] Model and effort match the task
+- [ ] `/context` shows no surprising history, instructions, or tools
+- [ ] `CLAUDE.md` is concise and durable
+- [ ] Unrelated work starts fresh
+- [ ] Compaction state preserves facts, failures, checks, and next step
+- [ ] MCP and permissions are least-privilege
+- [ ] Noisy output is filtered without losing diagnostic context
+- [ ] Exact verification evidence is reported
+- [ ] Meaningful changes receive independent diff review
 
 ## Sources
 
-- Claude Code Docs — *Manage costs effectively*: <https://code.claude.com/docs/en/costs>
-- Claude Help Center — *Usage limit best practices*: <https://support.claude.com/en/articles/9797557-usage-limit-best-practices>
-- Claude Help Center — *What is the Max plan?*: <https://support.claude.com/en/articles/11049741-what-is-the-max-plan>
+- Anthropic — [Usage limit best practices](https://support.claude.com/en/articles/9797557-usage-limit-best-practices)
+- Anthropic — [Manage costs effectively](https://code.claude.com/docs/en/costs)
+- Anthropic — [Prompt caching](https://code.claude.com/docs/en/prompt-caching)
+- Anthropic — [MCP tool search](https://code.claude.com/docs/en/mcp)
+- Anthropic — [Claude Code memory](https://code.claude.com/docs/en/memory)
 
-*Limit specifics change frequently; check `/usage` and Settings → Usage for current numbers.*
+## Key takeaway
+
+Claude Code is efficient when context stays relevant, tools and permissions stay narrow, and every change ends with reproducible evidence.

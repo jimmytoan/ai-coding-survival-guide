@@ -1,64 +1,69 @@
 # Context Compaction Example
 
-Long conversations can become stale, noisy, and expensive.
+Long conversations accumulate outdated assumptions, failed approaches, and repeated
+explanations. Compact them into a factual working state before continuing.
 
-Instead of keeping everything, compact the conversation into a useful working summary.
-
-## Bad compaction
+## Weak compaction
 
 ```text
-We discussed the billing feature and some ideas.
+We discussed the billing feature and made progress. Continue where we left off.
 ```
 
-This is too vague.
+This does not say what changed, which decisions are current, or what remains.
 
-## Good compaction
+## Useful compaction
 
 ```text
 Current goal:
-Implement AI usage budget alerts in the internal assistant platform.
+Add workspace AI-usage budget alerts without blocking read-only chat in V1.
+
+Acceptance criteria:
+- Warn workspace members at 70% and 90% monthly usage.
+- Block non-admin generation requests at 100%.
+- Allow an audited admin override.
 
 Relevant files:
-- usage-tracker.ts
-- billing-service.ts
-- model-router.ts
-- budget-alert-banner.tsx
+- src/usage/usage-tracker.ts
+- src/billing/budget-service.ts
+- src/routing/model-router.ts
+- src/ui/budget-alert-banner.tsx
 
-Decisions:
-- Warn at 70% budget usage.
-- Warn again at 90%.
-- Block non-admin users at 100%.
-- Admin users can override.
-- Every budget event must be auditable.
-- Do not block read-only AI chat during the first rollout.
+Confirmed decisions:
+- Budget is per workspace and resets at the billing-cycle boundary.
+- Existing usage_events remains the audit source.
+- Enforcement occurs server-side; the banner is informational.
+- No new billing provider or weekly email in V1.
 
-Constraints:
-- Do not introduce a new billing provider yet.
-- Use existing usage_events table if possible.
-- Keep UI minimal for V1.
+Implemented:
+- BudgetService now returns percentage used and threshold state.
+- Unit tests cover 69%, 70%, 90%, and 100% boundaries.
 
-Open questions:
-- Should budget be per user, team, or workspace?
-- Should admins receive weekly usage email?
+Verification evidence:
+- npm test -- budget-service.test.ts: 12 passed.
+- Typecheck has not been run.
+- UI and admin override are not implemented.
+
+Rejected approach:
+- Client-side blocking was rejected because it can be bypassed.
+
+Known risk:
+- Billing-cycle time-zone behavior is not yet confirmed.
 
 Next step:
-Design API and database changes before writing code.
+Confirm cycle-boundary semantics, then plan server-side enforcement in model-router.ts.
+
+Workspace state:
+- Branch: feature/budget-alerts
+- Uncommitted changes: budget-service.ts and budget-service.test.ts
 ```
 
-## Why this works
+## What to preserve
 
-It keeps:
+- Goal and acceptance criteria
+- Current files and workspace state
+- Confirmed decisions and rejected approaches that prevent repeated debate
+- Completed work and direct verification evidence
+- Unknowns, risks, and the single next step
 
-- Goal
-- Relevant files
-- Decisions
-- Constraints
-- Open questions
-- Next step
-
-It removes:
-
-- Old debate
-- Failed ideas
-- Repeated explanations
-- Irrelevant context
+Remove speculation, obsolete plans, raw tool output, and conversational history that
+does not change the next decision.

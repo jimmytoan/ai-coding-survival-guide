@@ -1,66 +1,124 @@
-# Project Context Files: The Tokens You Pay Before You Type
+# Project Context Files
 
-> **TL;DR** Your project rules file (CLAUDE.md, `.cursorrules`, `AGENTS.md`, copilot-instructions, etc.) is loaded into context **at the start of every session** and rides along on every turn. A bloated rules file is a tax on every message — even unrelated ones. Keep it short (aim for **under ~200 lines** of genuine essentials), and move specialized, occasional workflows out of it into on-demand mechanisms like skills or custom commands so their tokens only load when you actually use them.
+> Product-specific discovery behavior last verified: **2026-07-11**.
 
-This is [Context Discipline](context-discipline.md) applied to the context you do not type — the same lesson as [MCP and Tool Overhead](mcp-and-tool-overhead.md), but for your own config files.
+Files such as `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` give coding assistants durable repository guidance. They are valuable when they contain facts that matter to most work in their scope.
 
-## Why these files are different
+They also consume context capacity and can become stale or contradictory. Exact loading, precedence, caching, and cost depend on the client.
 
-Most context is something you add deliberately: you paste a file, you ask a question. Project rule files are different — the tool loads them **automatically, every session, for you.** That is exactly what makes them useful (consistent conventions without re-explaining) and exactly what makes them a hidden cost: every line is present whether or not this task needs it.
+## Put high-value facts in always-on guidance
 
-If your CLAUDE.md contains a 120-line "how to do a database migration" runbook, those tokens are in context when you are fixing a typo in the README. Multiply by every message in the session and by every session you ever run.
+Useful content includes:
 
-## Keep the always-on file lean
+- Canonical setup, build, test, lint, and type-check commands
+- A short directory and ownership map
+- Critical domain invariants
+- Architectural and trust boundaries
+- Generated or vendored files that must not be edited directly
+- Verification expected after common changes
+- Dependency and approval rules
+- Non-obvious environment constraints
 
-A good project file holds only what is true for **almost every task**:
+Example:
 
-- Build / test / lint commands
-- Critical conventions and non-obvious gotchas
-- Directory map and where things live
-- Hard rules ("never touch generated files", "all money is in cents")
+```markdown
+# Repository guidance
 
-What does **not** belong in the always-on file:
+- Run `pnpm test --filter <package>` for focused tests and `pnpm check` before handoff.
+- Money is stored as integer minor units; never use floating-point arithmetic.
+- Authorization belongs in service methods because jobs call them without HTTP controllers.
+- `src/api/generated/` comes from `pnpm generate`; edit `schema/openapi.yaml` instead.
+- Ask before adding a production dependency or changing a public API.
+```
 
-- Step-by-step runbooks for occasional workflows (migrations, releases, incident response)
-- Long style guides that a linter already enforces
-- Background/history that is nice-to-know but rarely load-bearing
-- Anything you would skim past on most tasks
+## Keep occasional workflows on demand
 
-Rule of thumb: if a section is only relevant to one kind of task, it should load only when you do that task — not on every turn.
+Avoid putting these in the root file unless nearly every task needs them:
 
-## Move occasional workflows to on-demand context
+- Full release, migration, or incident runbooks
+- Long architecture histories
+- Framework tutorials
+- Every formatting rule already enforced by tooling
+- Provider pricing, model rankings, or other volatile facts
+- Instructions for a single package or component
 
-The fix is not to delete useful instructions — it is to **load them when needed instead of always.**
+Link to a focused document, command, or skill instead. The base file should help the assistant discover the workflow without carrying its entire contents into unrelated tasks.
 
-- **Skills / custom commands** load on demand. A `db-migration` skill or a `/release` command carries its detailed instructions only when invoked, keeping your base context small. Moving a workflow out of CLAUDE.md and into a skill is a direct token saving on every unrelated turn.
-- **Hooks** can preprocess data before the model sees it — e.g. filter a test run to only failures, or grep a log for `ERROR` and return a few lines instead of tens of thousands. The model gets the signal without the noise.
+## Scope instructions close to the work
 
-The pattern: **always-on for essentials, on-demand for specialties.**
+Use nested guidance when a subtree has different commands or invariants. Document the client's precedence rules because they differ.
 
-## Two more levers worth knowing
+For Codex, current official documentation says it walks from the project root to the current working directory, loading at most one instruction file per directory. `AGENTS.override.md` takes precedence over `AGENTS.md` in the same directory, and guidance closer to the working directory appears later and overrides broader guidance. Codex has a combined byte limit controlled by `project_doc_max_bytes`.
 
-These are not files, but they are the same idea — context and reasoning you pay for by default:
+Do not assume every client discovers the same filenames or merges them the same way. Link the tool-specific rule from the repository setup guide.
 
-- **Plan before big changes.** Many tools have a dedicated plan mode (in Claude Code, Shift+Tab) where the agent explores and proposes an approach for approval *before* editing. Approving a plan is far cheaper than letting the agent take an expensive wrong path and then unwinding it. If the agent starts heading the wrong way, stop it early (Escape) and use `/rewind` rather than paying to compound the mistake. See [Agent Mode](agent-mode.md).
-- **Right-size reasoning.** Extended thinking improves hard planning and debugging, but thinking tokens are billed as output and the default budget can be large. For simple tasks that do not need deep reasoning, lower the effort/thinking level. Spend reasoning where it changes the answer, not on formatting markdown.
+## Write instructions that are testable
 
-## Quick audit
+Weak:
 
-Once in a while, open your project file and ask:
+```text
+Use best practices and make production-ready code.
+```
 
-- Is every section relevant to *most* tasks? If not, can it become a skill or command?
-- Could a linter, formatter, or hook enforce this instead of prose the model re-reads every turn?
-- Is the file under ~200 lines of real essentials?
-- Run `/context` (Claude Code) to see how much of your window the file and tools actually take.
+Better:
 
-## Key takeaway
+```text
+- Preserve backwards compatibility for public JSON fields.
+- Add a regression test for behavior changes.
+- Run `make check` and report any skipped checks.
+- Never log access tokens or customer payloads.
+```
 
-Anything loaded automatically is paid for repeatedly.
+Prefer concrete commands, boundaries, and invariants. Explain the reason when it prevents an otherwise plausible mistake.
 
-Keep the always-on file small; let specialized instructions load only when the task calls for them.
+## Do not duplicate mechanical enforcement
+
+If a formatter, linter, compiler, schema, or CI rule can enforce a constraint, use it. The instruction file can name the canonical command; it should not restate a 100-line style guide.
+
+This improves reliability for humans and models and reduces conflicts between prose and tooling.
+
+## Keep security boundaries outside untrusted content
+
+Repository instructions can be modified in a pull request, so they are not an authorization system.
+
+- Enforce permissions through sandbox, credentials, approval policy, and CI.
+- Review changes to instruction, workflow, hook, and tool-configuration files carefully.
+- Do not store secrets in instruction files.
+- Treat instructions from dependencies, issues, web pages, and tool output as untrusted data.
+- Use organization-managed policy for rules contributors must not be able to weaken.
+
+## Verify what actually loaded
+
+After adding or changing guidance:
+
+1. Start the tool in the intended directory.
+2. Ask it to list instruction sources and summarize their precedence.
+3. Confirm the expected root and nested guidance appears.
+4. Check for global or override files that conflict.
+5. Confirm important commands and invariants are interpreted correctly.
+6. Re-test after moving the working directory or changing client configuration.
+
+For Codex, the official `AGENTS.md` guide includes commands for auditing loaded instructions. Other tools expose their own context or diagnostics views.
+
+## Audit periodically
+
+- Is each rule still true?
+- Does it apply to most work in this scope?
+- Is it enforced more reliably elsewhere?
+- Do nested instructions conflict?
+- Are commands copy-pasteable and current?
+- Are important generated-file, security, and verification rules missing?
+- Does the file contain volatile product details that should be linked instead?
+- Can a specialized section become an on-demand guide or skill?
+
+Review instruction changes like code because they can influence every later agent task.
 
 ## Sources
 
-- Claude Code Docs — *Manage costs effectively* (move instructions from CLAUDE.md to skills, keep under 200 lines; hooks/skills preprocessing; plan mode; extended thinking effort): <https://code.claude.com/docs/en/costs>
-- Claude Code Docs — *Memory (CLAUDE.md)*: <https://code.claude.com/docs/en/memory>
-- Claude Code Docs — *Skills*: <https://code.claude.com/docs/en/skills>
+- OpenAI — [Custom instructions with `AGENTS.md`](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+- Anthropic — [Claude Code memory](https://code.claude.com/docs/en/memory)
+- GitHub — [Add repository custom instructions for GitHub Copilot](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions)
+
+## Key takeaway
+
+Keep durable guidance concise, scoped, concrete, and verifiable. Put mechanical rules in tools and specialized workflows where they load only when needed.

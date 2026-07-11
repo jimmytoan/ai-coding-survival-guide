@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">The Max Power AI coding loop</title>
+  <desc id="desc">A humorous loop from vague prompt to giant diff, fixing the fix, and an exhausted token meter, with an exit through define, inspect, verify, and review.</desc>
+  <rect width="1200" height="420" rx="24" fill="#0d1117"/>
+  <text x="600" y="52" fill="#f0f6fc" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" text-anchor="middle">THE MAX POWER LOOP</text>
+  <text x="600" y="82" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="16" text-anchor="middle">Doing it the wrong way, but faster.</text>
+
+  <g font-family="system-ui, -apple-system, sans-serif">
+    <rect x="55" y="120" width="235" height="145" rx="18" fill="#161b22" stroke="#388bfd" stroke-width="2"/>
+    <circle cx="85" cy="156" r="18" fill="#1f6feb"/>
+    <text x="85" y="163" fill="#ffffff" font-size="20" font-weight="700" text-anchor="middle">1</text>
+    <text x="190" y="160" fill="#58a6ff" font-size="20" font-weight="700" text-anchor="middle">VAGUE PROMPT</text>
+    <text x="172" y="202" fill="#f0f6fc" font-size="18" text-anchor="middle">“Fix everything.”</text>
+    <text x="172" y="232" fill="#8b949e" font-size="14" text-anchor="middle">Acceptance criteria: vibes</text>
+
+    <path d="M300 192 H330" stroke="#8b949e" stroke-width="4" stroke-linecap="round"/>
+    <path d="M323 183 L333 192 L323 201" fill="none" stroke="#8b949e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="340" y="120" width="235" height="145" rx="18" fill="#161b22" stroke="#a371f7" stroke-width="2"/>
+    <circle cx="377" cy="156" r="18" fill="#8957e5"/>
+    <text x="377" y="163" fill="#ffffff" font-size="20" font-weight="700" text-anchor="middle">2</text>
+    <text x="457" y="160" fill="#bc8cff" font-size="20" font-weight="700" text-anchor="middle">GIANT DIFF</text>
+    <text x="457" y="202" fill="#f0f6fc" font-size="18" text-anchor="middle">+4,732 lines</text>
+    <text x="457" y="232" fill="#8b949e" font-size="14" text-anchor="middle">New framework included</text>
+
+    <path d="M585 192 H615" stroke="#8b949e" stroke-width="4" stroke-linecap="round"/>
+    <path d="M608 183 L618 192 L608 201" fill="none" stroke="#8b949e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="625" y="120" width="235" height="145" rx="18" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+    <circle cx="662" cy="156" r="18" fill="#9e6a03"/>
+    <text x="662" y="163" fill="#ffffff" font-size="20" font-weight="700" text-anchor="middle">3</text>
+    <text x="742" y="160" fill="#e3b341" font-size="20" font-weight="700" text-anchor="middle">FIX THE FIX</text>
+    <text x="742" y="202" fill="#f0f6fc" font-size="18" text-anchor="middle">“Try again...”</text>
+    <text x="742" y="232" fill="#8b949e" font-size="14" text-anchor="middle">Tests now “optional”</text>
+
+    <path d="M870 192 H900" stroke="#8b949e" stroke-width="4" stroke-linecap="round"/>
+    <path d="M893 183 L903 192 L893 201" fill="none" stroke="#8b949e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="910" y="120" width="235" height="145" rx="18" fill="#161b22" stroke="#f85149" stroke-width="2"/>
+    <circle cx="947" cy="156" r="18" fill="#da3633"/>
+    <text x="947" y="163" fill="#ffffff" font-size="20" font-weight="700" text-anchor="middle">4</text>
+    <text x="1040" y="160" fill="#ff7b72" font-size="20" font-weight="700" text-anchor="middle">TOKEN METER</text>
+    <text x="1027" y="202" fill="#f0f6fc" font-size="18" font-weight="700" text-anchor="middle">AAAAA!</text>
+    <rect x="955" y="222" width="145" height="12" rx="6" fill="#30363d"/>
+    <rect x="955" y="222" width="137" height="12" rx="6" fill="#f85149"/>
+
+    <path d="M1027 275 C1027 310 875 306 875 285" fill="none" stroke="#f85149" stroke-width="3" stroke-dasharray="8 8"/>
+    <path d="M867 293 L875 282 L883 293" fill="none" stroke="#f85149" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="220" y="315" width="760" height="72" rx="18" fill="#12261e" stroke="#3fb950" stroke-width="2"/>
+    <text x="600" y="344" fill="#56d364" font-size="16" font-weight="700" text-anchor="middle">EXIT HERE</text>
+    <text x="600" y="372" fill="#f0f6fc" font-size="21" font-weight="700" text-anchor="middle">DEFINE → INSPECT → VERIFY → REVIEW</text>
+  </g>
+</svg>

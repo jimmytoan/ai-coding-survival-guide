@@ -1,54 +1,73 @@
 # AI Usage Retro Template
 
-Use this after an AI-assisted task.
+Use this after a meaningful AI-assisted task. Record enough evidence to improve
+the workflow, but do not copy sensitive prompts or data into the retro.
 
 ## Task
 
-What were you trying to accomplish?
-
 ```text
-[Describe task]
+Goal:
+Task type:
+Risk level: low / medium / high
+Acceptance criteria:
+Final status: accepted / partially accepted / rejected
 ```
 
-## Tool and model
+## Tool and setup
 
 ```text
-Tool:
-Model:
-Agent mode: yes/no
+Tool and model:
+Important settings:
+Agent mode or subagents:
+Tools/integrations enabled:
 ```
 
-## Context used
+## Context strategy
 
 ```text
-Files:
-Conversation length:
-Large workspace context used: yes/no
+Initial files or artifacts supplied:
+Additional context requested:
+Conversation restarted or compacted:
+Context that was missing or unnecessary:
 ```
 
-## Outcome
+## Effort and outcome
+
+Use measured values where possible rather than estimates.
 
 ```text
-Was the output accepted? yes/no/partially
-Estimated time saved:
-Review effort: low/medium/high
-Rework required:
+AI interaction time:
+Human review time:
+Human rework time:
+Estimated cost or quota usage:
+First-pass acceptance: yes / no
+Scope violations or unrelated changes:
+Defects found before merge:
+Defects found after merge:
 ```
 
-## What worked well?
+## Verification evidence
 
 ```text
-[Notes]
+Commands/checks run and results:
+Acceptance criteria demonstrated by:
+What was not verified:
 ```
 
-## What wasted time or tokens?
+## What helped?
 
 ```text
-[Notes]
+[Useful prompt, context choice, model choice, or workflow step]
 ```
 
-## What would you do differently next time?
+## Where did the assistant mislead or create work?
 
 ```text
-[Notes]
+[Wrong assumptions, weak code, excessive context, review burden, or rework]
+```
+
+## One change for next time
+
+```text
+[A specific experiment: narrower scope, different model, earlier test, better task brief, etc.]
 ```

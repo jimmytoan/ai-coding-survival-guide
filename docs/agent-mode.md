@@ -1,144 +1,192 @@
 # Agent Mode
 
-Agent mode is powerful.
+Agent mode lets an assistant inspect files, edit code, run commands, use tools, and iterate. The value is not merely code generation; it can close the loop between a change and its evidence.
 
-It can inspect files, make changes, run commands, and iterate.
+The risk is also real: one vague request can cause many reads, commands, edits, network calls, or external actions.
 
-It can also burn more tokens because one user request may trigger many internal steps.
+> Match autonomy to reversibility, blast radius, and verification strength.
 
-Use it like delegation, not gambling.
+## Choose the right level of autonomy
 
-## When agent mode is useful
+| Level | Agent may | Good for |
+|---|---|---|
+| Advise | Read supplied context and propose | Explanations, architecture discussion, early diagnosis |
+| Inspect | Search and run read-only checks | Repository mapping, root-cause investigation, review |
+| Edit | Modify scoped files and run local checks | Normal bug fixes, features, refactors |
+| Act | Use network or external systems | PR workflows, issue updates, deployments with explicit controls |
 
-Use agent mode for:
+Start at the lowest level that can complete the task efficiently. Increase access for a concrete need, not because full access is convenient.
 
-- Multi-file changes
-- Repetitive edits
-- Test generation across modules
-- Clear scoped implementation tasks
-- Simple migrations
-- Documentation updates across many files
-- Refactors with a clear plan
-- Tasks where saved time is worth the cost
+## Good agent tasks
 
-Good prompt:
+Agent mode works well when:
+
+- The outcome and acceptance criteria are clear.
+- The repository provides executable feedback.
+- The task contains several related steps.
+- Scope is bounded or discoverable from a clear entry point.
+- Changes are reversible and reviewable.
+- Tool use saves meaningful human time.
+
+Examples:
+
+- Implement a scoped feature plus tests
+- Diagnose and fix a reproducible bug
+- Apply a mechanical migration in checkpoints
+- Update code and its directly affected documentation
+- Run a focused review against a checklist
+- Reproduce a CI failure locally and report evidence
+
+## Poor agent tasks
+
+Use advice or inspection first when:
+
+- Product intent is undefined.
+- Success is subjective (“make it better”).
+- The action is irreversible or production-critical.
+- Required access is broader than the task.
+- No one can verify the output.
+- The task combines several unrelated goals.
+
+Tiny edits can still be appropriate in agent mode if opening another tool costs more than the work. The relevant question is not line count; it is whether delegation adds useful feedback without unnecessary risk.
+
+## Give the agent an operating envelope
+
+State:
+
+- Goal and acceptance criteria
+- Starting points and allowed scope
+- Constraints and non-goals
+- Commands it may run
+- Permission boundaries
+- Actions that require approval
+- Verification requirements
+- Stop conditions
+
+Example:
 
 ```text
-Implement the approved plan.
+Implement the approved login redirect fix and regression tests.
 
 Scope:
-- Only update files listed in the plan.
-- Do not introduce new dependencies.
-- Keep changes small and reviewable.
-- Run tests if available.
+- src/auth/
+- tests/auth/
 
-Stop and ask if you need to touch additional files.
+May:
+- Inspect callers needed to verify compatibility
+- Edit scoped files
+- Run focused auth tests, lint, and type-check
+
+Must ask before:
+- Adding a dependency
+- Changing a public interface
+- Accessing the network
+- Modifying files outside the scope
+
+Stop if:
+- Safe redirect behavior conflicts with an existing documented requirement
+- The working tree contains overlapping edits
+
+Report exact verification results and skipped checks.
 ```
 
-## When agent mode is overkill
+Template: [Scoped Implementation](../templates/scoped-implementation-prompt.md)
 
-Avoid agent mode for:
+## Plan in proportion to risk
 
-- Simple explanations
-- One-line changes
-- Small questions
-- README edits
-- Basic error explanation
-- “What does this function do?”
-- “Suggest a better variable name”
-- “Write a small helper function”
+A separate plan is valuable for:
 
-Normal chat is often enough.
+- Multi-component behavior
+- Migrations and data changes
+- Security-sensitive paths
+- Public API or compatibility changes
+- Work where the likely file set is uncertain
 
-## Ask for a plan first
+For a low-risk, obvious change, a two-sentence intent plus immediate verification may be enough. The purpose of planning is to expose wrong assumptions before they become expensive edits.
 
-Before agent mode writes code, ask for a plan.
+## Use least privilege and safe environments
 
-```text
-Create a plan first.
+- Limit writable paths and network access.
+- Keep secrets out of prompts and logs.
+- Use development or read-only credentials.
+- Prefer a branch, worktree, sandbox, container, or ephemeral environment.
+- Require approval for installs, destructive commands, deployments, external messages, and production data changes.
+- Treat repository, issue, web, and tool content as untrusted data.
 
-Do not edit files yet.
+See [Security and Privacy](security-and-privacy.md).
 
-Output:
-- Files likely affected
-- Proposed changes
-- Risks
-- Test plan
-- Questions
-```
+## Protect the user's working tree
 
-Only approve implementation after the plan makes sense.
+Before editing, the agent should inspect repository state and preserve unrelated changes.
 
-## Limit scope
+It should not:
 
-Bad:
+- Overwrite overlapping user edits
+- Revert or delete files it did not create without approval
+- Reset the repository to make tests pass
+- Reformat unrelated files
+- commit, push, or open a pull request unless that action is requested
 
-```text
-Fix the whole payment module.
-```
+When overlap exists, isolate the change or stop with a precise explanation.
 
-Better:
+## Use meaningful checkpoints
 
-```text
-Implement only the validation cleanup in:
-- src/payment/validate.ts
-- src/payment/errors.ts
+Checkpoint when the next step is expensive, irreversible, or based on an assumption:
 
-Do not modify API behavior.
-Do not update unrelated files.
-Stop if you find a larger design issue.
-```
+- After discovery, before a high-risk plan
+- Before adding a dependency or changing an interface
+- Before a migration or destructive action
+- When scope expands materially
+- After a stage that has its own verification target
 
-## Use checkpoints
+Do not require approval after every harmless file edit. Excessive checkpoints remove the speed advantage without improving control.
 
-For larger tasks, ask the agent to pause:
+## Make verification part of the task
 
-```text
-After each file change, summarize:
-- What changed
-- Why it changed
-- What tests should cover it
+Tell the agent what evidence establishes completion:
 
-Do not continue to the next file until I approve.
-```
+- Focused regression test
+- Type, lint, and build checks
+- Integration or contract test
+- Manual browser or CLI flow
+- Security or dependency scan
+- Migration rehearsal or rollback check
 
-## Review the diff
+Require exact commands, outcomes, skipped checks, and residual risks. See [Verification and Testing](verification-and-testing.md).
 
-Agent mode does not remove your responsibility.
+## Review every changed file
 
-After agent work, review:
+After the run:
 
-- Files touched
-- Unexpected changes
-- New dependencies
-- Duplicated logic
-- Deleted behavior
-- Tests
-- Security impact
-- Error handling
-- Observability/logging
+- Inspect repository status and diff statistics.
+- Read every changed file, including tests and CI/configuration.
+- Look for new dependencies, permissions, generated artifacts, and debug code.
+- Compare the final behavior with every acceptance criterion.
+- Re-run appropriate checks after review fixes.
+- Use an independent review context for medium- or high-risk work.
 
-Template: [PR Review Checklist](../templates/pr-review-checklist.md)
+The final summary can miss changes. The diff is authoritative.
 
-## Use plan mode before expensive changes
+## Stop runaway loops
 
-Many tools have a dedicated plan mode (in Claude Code, Shift+Tab) where the agent explores the codebase and proposes an approach for your approval **before** it edits anything.
+Interrupt and reset when the agent:
 
-This is a token saver, not just a safety feature: approving a plan is far cheaper than letting the agent take an expensive wrong path and then paying again to unwind it.
+- Repeats the same failed approach
+- Makes speculative edits without new evidence
+- Expands into unrelated cleanup
+- Tries to weaken checks
+- Requests broad access without a concrete need
+- Produces growing diffs while the root cause remains unknown
+- Claims success without reproducible verification
 
-If the agent starts heading the wrong direction, stop it early (Escape) and use `/rewind` or a checkpoint rather than letting the mistake compound.
+Preserve a short investigation summary of facts, rejected hypotheses, and the next experiment before starting fresh.
 
-## Spawning multiple agents
+## Multiple agents
 
-One agent doing a delegated job is the simple case. Spawning *several* agents is a different cost trade:
+Parallel agents are useful for genuinely independent work or independent review. They consume separate context and may edit the same workspace, so define exclusive file ownership or use isolated worktrees.
 
-- A subagent that **absorbs noisy output** (running tests, reading logs, fetching docs) keeps that noise out of your main context — it saves tokens.
-- Running agents **in parallel** multiplies cost — each one carries its own full context window — but buys wall-clock speed.
-
-Know which one you are doing before you launch it. See [Subagents and Agent Teams](subagents-and-agent-teams.md).
+Use one orchestrator to reconcile conclusions and run final verification. See [Subagents and Agent Teams](subagents-and-agent-teams.md).
 
 ## Key takeaway
 
-Agent mode should feel like controlled delegation.
-
-Not “please go wild in my repo.”
+Agent mode should operate inside a clear envelope: enough access to finish the task, explicit boundaries for risky actions, and evidence that the result works.

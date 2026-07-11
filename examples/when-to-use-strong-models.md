@@ -1,56 +1,54 @@
 # When to Use Strong Models
 
-Strong models are valuable when the task requires deeper reasoning or when mistakes are expensive.
+Strong models earn their cost when a task needs deeper synthesis or when an error
+would create expensive rework or risk.
 
-## Use strong models for
+## Good uses
 
-- Architecture trade-offs
-- Implementation planning
-- Security review
-- Authentication/authorization logic
+- Architecture and implementation trade-offs
+- Security and privacy reviews
+- Authentication and authorization logic
+- Complex, intermittent, or cross-service debugging
 - Production incident analysis
-- Complex debugging
-- Data migration
-- Large refactoring plans
-- Final review before merge
+- Data and API migrations
+- Large refactor planning and dependency sequencing
+- Final review of high-risk changes
 
-## Example: implementation planning
+## Give the model a decision-ready context packet
+
+More context is not automatically better. Supply:
+
+- Goal, current behavior, acceptance criteria, and non-goals
+- The relevant code paths and contracts
+- Constraints and known risks
+- Evidence such as errors, traces, diffs, and test results
+- The decision or output format you need
+
+## Example: migration planning
 
 ```text
-Create an implementation plan before writing code.
+Plan only. Migrate authorization from fixed roles to policies while old and new
+application versions may run together.
 
-Goal:
-Migrate the user permission model from role-based access to policy-based access.
-
-Output:
-- Current assumptions
-- Risk areas
-- Data model changes
-- API changes
-- Migration plan
-- Test plan
-- Rollback plan
-- Questions before implementation
-
-Do not write code yet.
+Return confirmed repository facts separately from assumptions, then cover schema
+and API compatibility, backfill and cutover, observability, failure recovery,
+rollback, security review, and a test matrix. Compare at least two viable rollout
+strategies and recommend one using the stated constraints.
 ```
 
 ## Example: security review
 
 ```text
-Review this authentication change.
+Review this authentication diff without editing it.
 
-Focus on:
-- Token validation
-- Session expiry
-- Replay risks
-- Permission bypass
-- Logging of sensitive data
-- Edge cases
-
-Return critical issues first.
+Trace untrusted input through token validation, session creation, authorization,
+logging, and error responses. Report only findings with a plausible attack path.
+For each finding include severity, file/line evidence, impact, preconditions, and
+the smallest mitigation. List verification gaps separately.
 ```
 
-## Key takeaway
+## Keep human checkpoints
 
-Use strong models where they reduce expensive mistakes.
+A stronger model can still make confident mistakes. Use it for the hard reasoning,
+then inspect the diff, verify claims with direct evidence, run relevant checks, and
+require specialist review for high-risk domains.

@@ -1,146 +1,186 @@
 # Team Guidelines for AI Coding Assistants
 
-This is a lightweight guideline for engineering teams using AI coding assistants.
+AI coding assistants are engineering tools. Teams should make their safe path clear, their high-risk boundaries explicit, and their outcomes observable.
 
-The goal is not to restrict AI usage.
+> The developer who submits a change remains accountable for understanding, verifying, and operating it.
 
-The goal is to make usage effective, safe, and sustainable.
+Use the [AI Coding Policy Template](../templates/ai-coding-policy-template.md) to turn this guide into an organization-specific policy.
 
-## Team principle
+## Define approved use
 
-> Use AI to improve engineering quality and speed, not to create faster review burden.
+Document:
 
-## Encourage AI usage for low-risk work
+- Approved tools, providers, models, and surfaces
+- Accounts and workspace types developers must use
+- Allowed repository and data classifications
+- Retention, training, regional, and contractual requirements
+- Whether local, cloud, connector, or API access is permitted
+- Support and exception contacts
 
-AI assistants are useful for:
+Do not make developers infer policy from procurement status or a chat message.
 
-- Code explanation
-- Documentation drafts
-- Unit test drafts
-- Error explanation
-- Small refactors
-- Pull request summaries
-- Debugging assistance
-- Learning unfamiliar code
-- Generating examples
-- Implementation planning
+## Classify data before sharing it
 
-## Use extra care for high-risk work
+State how the team handles:
 
-Extra review is required for:
+- Credentials, tokens, keys, and certificates
+- Customer and employee personal data
+- Production logs, traces, screenshots, and database records
+- Confidential source and unreleased product information
+- Regulated or contract-restricted data
+- Third-party code and licensed material
 
-- Authentication
-- Authorization
-- Security-sensitive code
-- Infrastructure changes
-- Production incident fixes
-- Financial calculations
-- Data migration
-- Privacy-sensitive workflows
-- Large multi-file refactors
-- Generated code that changes business logic
+Prefer synthetic, minimal examples. Redaction must cover files and tool output as well as prompts. Exposed secrets must be rotated and reported; deleting the conversation is not enough.
 
-## Token discipline
+## Use risk-based controls
 
-Developers should:
+| Risk | Examples | Minimum controls |
+|---|---|---|
+| Low | Docs, formatting, mechanical rename | Normal review and focused check |
+| Medium | Bug fix, feature, dependency update | Acceptance criteria, scoped diff, tests, human review |
+| High | Auth, payments, privacy, migrations, infrastructure | Threat/risk review, least privilege, staged plan, rollback, specialist approval |
 
-- Use the right model for the task.
-- Try smaller models for simple tasks.
-- Use stronger models for complex or high-risk work.
-- Start new chats when old context is stale.
-- Compact long conversations when possible.
-- Avoid dumping an entire repo unless truly needed.
-- Ask for a plan before implementation.
-- Keep changes small and reviewable.
-- Avoid agent mode for tiny tasks.
+Adjust the classification to the product. A “small” authorization diff can be high risk.
 
-## Suggested internal message
+## Set autonomy and approval boundaries
+
+Define what agents may do without additional approval and what always requires it.
+
+Common approval gates:
+
+- New production dependencies
+- Public API or schema changes
+- Network access or external data retrieval
+- Destructive Git or filesystem operations
+- Database mutation or backfill
+- Infrastructure, deployment, or credential changes
+- Messages, issue updates, pull requests, or publication
+- Access to secrets or production systems
+
+Use sandboxes, limited writable paths, read-only credentials, and separate environments. Prompt instructions do not replace access controls.
+
+## Require an engineering task contract
+
+Meaningful tasks should include:
+
+- Goal and expected behavior
+- Acceptance criteria
+- Constraints and non-goals
+- Relevant entry points or reproduction
+- Verification expectations
+- Risk and data classification
+
+Use the [Task Brief](../templates/task-brief-template.md).
+
+## Require evidence at handoff
+
+Every AI-assisted change should report:
+
+- What changed and why
+- Exact commands run and results
+- Manual or specialized checks
+- Checks skipped and why
+- New dependencies, permissions, migrations, or external effects
+- Known limitations and residual risk
+
+Do not accept “the agent says tests pass” without reproducible command evidence.
+
+## Review generated code for AI-specific risks
+
+In addition to normal review, check for:
+
+- Invented APIs, flags, and configuration keys
+- Hallucinated or lookalike packages
+- Weakened, skipped, circular, or deleted tests
+- Unrelated scope expansion
+- Secrets or sensitive data in code and logs
+- Changes to lockfiles, CI, build, hooks, containers, and deployment files
+- Public-code or license concerns
+- Client-side-only security checks
+- Comments that promise behavior the code does not enforce
+
+For high-risk code, use a fresh independent review plus the appropriate specialist. See [Reviewing AI-Generated Code](reviewing-ai-generated-code.md).
+
+## Keep verification layered
+
+The team should publish canonical commands for:
+
+- Formatting, linting, types, and build
+- Focused and full tests
+- Security, secret, and dependency scans
+- Contract and integration checks
+- Migration validation
+- Accessibility, visual, performance, or operational checks where relevant
+
+CI should enforce mechanical policy. Humans should focus on intent, architecture, domain behavior, and risk.
+
+## Govern dependencies and provenance
+
+Before adding a suggested package, verify its exact registry identity, ownership, maintenance, license, compatibility, advisories, transitive risk, and lockfile changes.
+
+Define policy for public-code matching, attribution, software bills of materials, and generated content. See [Dependencies and API Research](dependencies-and-api-research.md).
+
+## Manage persistent agent configuration
+
+Treat project instructions, skills, hooks, workflows, and tool configuration as security-relevant code:
+
+- Review changes through normal ownership rules.
+- Keep organization policy outside contributor-controlled instructions.
+- Avoid secrets and volatile product facts.
+- Verify precedence and what actually loads.
+- Enforce critical rules through permissions and CI.
+
+## Measure outcomes, not adoption theater
+
+Track by task type and risk:
+
+- Verified and first-pass success
+- Review and rework minutes
+- Lead time
+- Escaped defects and rollbacks
+- Total credits, quota, or API spend
+- Scope violations and policy exceptions
+- Incidents and near misses
+
+Do not reward raw lines generated, prompt count, or percentage of developers using a tool.
+
+See [Cost and Outcome Observability](cost-observability.md).
+
+## Create an incident and exception path
+
+Document how to report:
+
+- Secret or sensitive-data exposure
+- Unsafe or unauthorized agent action
+- Malicious package suggestion or installation
+- Prompt-injection or compromised tool behavior
+- License or provenance concern
+- AI-assisted defect or near miss
+- Needed policy exception
+
+Favor learning over concealment. Update automation, tests, documentation, and permissions when the same failure could recur.
+
+## Suggested team message
 
 ```text
-Everyone, please be mindful of token usage when using AI coding assistants.
+Use AI coding assistants where they improve delivery, but keep the same ownership
+and quality bar as any other change.
 
-These tools are useful and we should continue using them, but as more providers move toward usage-based pricing, we need to be more disciplined.
+For meaningful work:
+- Define expected behavior and acceptance criteria.
+- Share only data approved for the tool and workspace.
+- Keep agent permissions and scope as narrow as practical.
+- Verify packages, APIs, tests, and tool claims independently.
+- Run the repository's required checks and report exact results.
+- Review every changed file, including tests, lockfiles, CI, and configuration.
+- Get independent or specialist review for high-risk changes.
 
-A few practical habits:
+If an action affects production, data, credentials, dependencies, external
+systems, or public interfaces, follow the documented approval path.
 
-- Start a new chat when the conversation becomes too large or stale.
-- Compact/summarize the conversation when the tool supports it.
-- Use the right model for the task.
-- Try smaller/cheaper models for simple tasks like summaries, explanations, docs, basic tests, or small code transformations.
-- Use stronger models for complex or higher-risk work, such as implementation planning, architecture decisions, security-sensitive logic, or production changes.
-- Avoid dumping the whole repo into AI and asking it to generate a large amount of code.
-- Ask for a plan first, then implement in smaller reviewable steps.
-
-The goal is not to use less AI.
-
-The goal is to use AI better.
+AI can accelerate the work. The submitting developer still owns the result.
 ```
-
-## Suggested review expectation
-
-AI-generated code should be reviewed like human-written code.
-
-Reviewers should check:
-
-- Does the change solve the actual problem?
-- Is the code simple?
-- Is there duplicated logic?
-- Are there unnecessary abstractions?
-- Are tests meaningful?
-- Are edge cases covered?
-- Are security assumptions valid?
-- Did the assistant touch unrelated files?
-- Is the diff small enough to understand?
-
-## Suggested model policy
-
-| Work type | Suggested model |
-|---|---|
-| Simple explanations | Small / cheap |
-| Documentation drafts | Small / cheap |
-| Basic tests | Small / cheap |
-| First-pass review | Small / medium |
-| Implementation planning | Strong |
-| Security review | Strong |
-| Architecture decisions | Strong |
-| Production incident analysis | Strong |
-
-## Suggested agent mode policy
-
-Agent mode is allowed when:
-
-- The task is clear.
-- The scope is defined.
-- The developer reviewed the plan.
-- The output will be reviewed before merge.
-- The task is worth the cost.
-
-Agent mode should not be used as a replacement for understanding the problem.
-
-## Team metrics to track
-
-Teams can track:
-
-- Cost per useful task
-- Time saved
-- Output acceptance rate
-- Review effort
-- Bugs introduced
-- Rework required
-- Model used
-- Agent mode usage
-- Task category
-
-See: [Cost Observability](cost-observability.md)
 
 ## Key takeaway
 
-AI coding assistants are now part of engineering workflow.
-
-Treat them like engineering tools:
-
-- Useful
-- Powerful
-- Not magic
-- Not free
-- Better with good process
+A useful policy makes ordinary AI-assisted work easy, sensitive actions explicit, and human accountability non-negotiable.

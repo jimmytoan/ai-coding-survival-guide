@@ -1,90 +1,155 @@
-# Token Optimization Playbook (Subscription Edition)
+# Token Optimization Playbook
 
-> **TL;DR** If you are on a subscription — **Claude Max** (~$100 / ~$200 a month) or **ChatGPT / Codex Pro** (~$100 / ~$200 a month) — your bill is fixed. The thing you are actually optimizing is **not dollars, it is throttling.** Both tools meter you with a **5-hour rolling window** *and* a **weekly cap**. Waste does not show up as a charge; it shows up as "you've hit your limit, come back later." Every habit in this guide buys you the same thing: **more useful work before the window resets.**
+Token efficiency is not the goal by itself. The goal is more correct, useful, reviewable work within a budget, credit pool, or subscription limit.
 
-This is the hub. The durable, cross-tool principles live here. The exact commands and config knobs live in the tool-specific guides:
+> Optimize cost per verified outcome, not tokens per prompt.
 
-- **[Claude Code Optimization](claude-code-optimization.md)**
-- **[Codex Optimization](codex-optimization.md)**
+This page covers durable cross-tool principles. Product details live in the dated guides:
 
-## The meter you can't see
+- [Claude Code Optimization](claude-code-optimization.md)
+- [Codex Optimization](codex-optimization.md)
 
-On a usage-based plan the meter is the price page. On a subscription the meter is your **rate limit**, and it has two layers on both tools:
+## Know which meter you are using
 
-| Layer | What it governs | Roughly |
-| --- | --- | --- |
-| **5-hour rolling window** | Short bursts of activity | Resets ~5 hours after your first message in the window |
-| **Weekly cap** | Sustained compute over the week | Resets on a rolling 7-day basis |
+Different products expose different constraints:
 
-You can hit *either* and get throttled. The tiers are parallel across both products: the **~$100 tier is "5×"** baseline usage and the **~$200 tier is "20×"**. Same shape, same lesson — burning the window on low-value work means you are locked out (or pushed onto pay-as-you-go credits) when you need it for real work.
+- **API usage:** input, cached input, output, and tool charges
+- **Credits:** provider-specific units derived from model and feature use
+- **Subscription allowance:** rolling session windows, weekly or other limits, and fair-use policies
+- **Latency:** time spent waiting for long reasoning, tools, or parallel agents
+- **Human cost:** prompt preparation, review, rework, and incident risk
 
-> Limits and tiers change often and the exact numbers are not published precisely. Treat the structure as stable and **check the live usage screen in your tool**, not a blog number.
+A subscription may fix the monthly bill while still limiting access. Credits may let you continue after included use. Exact schedules and accounting change, so use the provider's live usage dashboard rather than an old blog number.
 
-## What actually drains the bucket
+## What commonly drives usage
 
-Usage scales with **how much the model has to process and produce**, not how many messages you send. The big drivers, in rough order:
+- Model capability and reasoning effort
+- Conversation history and attached files
+- Always-on instructions and tool definitions
+- Large command, log, search, and tool results
+- Output length
+- Agent iterations and retries
+- Subagents and parallel workers
+- Repeated discovery caused by weak task handoffs
+- Rework after an incorrect broad implementation
 
-1. **Model capability.** A frontier model (Opus, GPT-5-class) spends your allowance far faster than a mid model (Sonnet, GPT-mini-class). On Claude Max the weekly cap is even split — there's an *all-model* limit and a separate, more generous *Sonnet-only* limit — so staying on Sonnet literally draws from a different, larger bucket.
-2. **Reasoning / thinking effort.** Extended thinking bills as output. High effort on a trivial task is pure drain.
-3. **Output length.** Long reports, full-file rewrites, and "review your own work again" loops are expensive. Ask for diffs and terse answers.
-4. **Context re-sent every turn.** The whole conversation, your rules file, and tool definitions ride along on *every* message. A bloated context taxes every turn until you compact or clear.
-5. **Agent / parallel multiplication.** Spawning multiple agents multiplies the work — each carries its own context window. Great for speed, expensive for your window.
+Prompt caching and deferred tool loading can reduce repeated processing, but they do not make irrelevant context or noisy output harmless.
 
-## The cross-tool playbook
+## The high-leverage playbook
 
-These apply to **both** Claude Code and Codex. The tool-specific guides show how to do each one.
+### 1. Define success before spending context
 
-**1. Default to the mid model; opt *into* the frontier model.**
-Sonnet / GPT-mini-class handles ~80% of coding work and draws from a bigger bucket. Reserve the top model + high reasoning effort for architecture, security, and hard debugging. See [Model Selection](model-selection.md).
+State goal, expected behavior, acceptance criteria, constraints, non-goals, and verification. A focused task packet prevents expensive fix-up loops.
 
-**2. Right-size reasoning effort, not just the model.**
-Low effort for formatting, lint, simple reviews. High effort only when reasoning changes the answer. Thinking tokens count.
+Template: [Task Brief](../templates/task-brief-template.md)
 
-**3. Stop feeding the model noise.**
-The classic drain is a thousand-line test/build log sent so the model can find one failing line. Filter command output down to failures (a hook in Claude Code, a wrapper or `AGENTS.md` rule in Codex). Engineers report **60–90%** reductions on dev-loop output.
+### 2. Retrieve context progressively
 
-**4. One task per session; clear between unrelated work.**
-Give each session a single clear objective and start fresh afterward. Stale context is re-sent — and re-charged against your window — on every later message. See [Context Discipline](context-discipline.md).
+Start with an entry point and let the assistant inspect required callers, tests, contracts, and configuration. Do not dump the whole repository, but do not hide required context behind arbitrary file limits.
 
-**5. Compact early, while the session is warm.**
-Compact at a natural break around ~60% context rather than waiting for forced auto-compaction. On a warm cache this is cheap; after a long idle gap it reprocesses your whole history. See [Compaction and the Prompt Cache](compact-and-caching.md).
+See [Context Discipline](context-discipline.md).
 
-**6. Keep the always-on context lean.**
-Your rules file (`CLAUDE.md` / `AGENTS.md`) and connected MCP servers are sent every turn. Keep rules to essentials, move occasional runbooks to on-demand skills/commands, and connect only the MCP servers you need. See [Project Context Files](project-context-files.md) and [MCP and Tool Overhead](mcp-and-tool-overhead.md).
+### 3. Route by measured difficulty and risk
 
-**7. Point the agent at the right files.**
-"Dump five files because nobody knew where the function lived" is waste. Name the files, or use a repo-map / code-graph / LSP tool so the agent does targeted lookups instead of blind reads.
+Use a fast, economical model and lower effort for tasks it solves reliably. Escalate for genuinely difficult reasoning, not because the first prompt omitted requirements.
 
-**8. Constrain output.**
-Ask for unified diffs, no preamble, no trailing summary. Cap output length. A frontier model writing an essay when you wanted a three-line fix is a window you don't get back.
+High-risk work needs layered verification and human review regardless of model.
 
-**9. Plan intensive work around your windows.**
-Know when your 5-hour window and weekly cap reset, and line up the heavy, frontier-model work for the start of a fresh window — not the moment before a reset.
+See [Model Selection](model-selection.md).
 
-**10. Watch the live usage screen.**
-Both tools show you where you stand. Look *before* you guess, and especially before kicking off an expensive agent run.
+### 4. Keep sessions coherent
 
-## The 80/20
+Use one objective per task. Start fresh when old decisions and logs are no longer useful. Compact at a coherent milestone when continuity matters, and preserve exact state because summaries are lossy.
 
-If a teammate reads nothing else:
+### 5. Filter tool output early
 
-1. Stay on the mid model + low effort by default; opt into the big one deliberately.
-2. Filter noisy command output — the single biggest win.
-3. One task per session, clear between tasks, compact early.
-4. Keep `CLAUDE.md` / `AGENTS.md` and MCP servers lean.
+Choose focused tests, fields, date ranges, and failure summaries before output reaches the model. Preserve the command, exit status, and enough surrounding context to diagnose the failure.
+
+Deterministic filtering is usually cheaper than asking another model to read thousands of irrelevant lines.
+
+### 6. Keep always-on context valuable
+
+Project instruction files should contain durable commands, invariants, boundaries, and verification expectations. Put specialized runbooks in on-demand guides or skills. Disable unused tool servers.
+
+See [Project Context Files](project-context-files.md) and [MCP and Tool Overhead](mcp-and-tool-overhead.md).
+
+### 7. Plan in proportion to risk
+
+- Clear, local, reversible: implement and verify directly.
+- Ambiguous or multi-component: inspect and produce a short evidence-backed plan.
+- Destructive, external, security-sensitive, or migratory: plan stages, rollback, approvals, and verification explicitly.
+
+A plan is valuable when it prevents wrong work. It is overhead when it merely restates an obvious edit.
+
+### 8. Make one small coherent change
+
+Avoid huge “improve everything” diffs. Separate mechanical edits, behavior changes, and migrations. Small changes reduce context, review time, and rework while making tests more diagnostic.
+
+### 9. Ask for concise handoffs, not duplicate artifacts
+
+When an agent edits files, review the real diff. Ask the final response for:
+
+- What changed and why
+- Exact verification results
+- Skipped checks
+- Remaining risks
+
+Do not pay for a full-file rewrite or a second unified diff when the workspace already contains the authoritative change.
+
+### 10. Use subagents deliberately
+
+Subagents can protect parent context, specialize a pass, provide independent review, or reduce wall-clock time. They perform additional model work.
+
+Measure total use, assign bounded scopes, and avoid parallelizing dependent tasks.
+
+### 11. Stop failing loops early
+
+After a failed attempt, identify whether the issue is:
+
+- Missing or stale context
+- Ambiguous requirements
+- Insufficient reasoning
+- Missing tool or environment
+- Wrong hypothesis
+- A product decision the model cannot make
+
+Change the input or approach. Repeating “try again” burns usage without adding evidence.
+
+### 12. Verify before declaring efficiency
+
+A short answer that creates a defect is not efficient. Include compilation, focused tests, static checks, broader behavior checks, and independent review based on risk.
+
+See [Verification and Testing](verification-and-testing.md).
+
+## A useful optimization order
+
+When a workflow uses too much capacity:
+
+1. Remove rework by improving the task contract and acceptance criteria.
+2. Filter large tool output.
+3. Remove stale conversation context.
+4. Reduce always-on instructions and unused tools.
+5. Right-size model and reasoning.
+6. Constrain output length.
+7. Reconsider parallel agents and repeated review loops.
+8. Automate deterministic recurring work outside the model.
+
+This order protects quality while attacking common waste.
+
+## Measure the whole outcome
+
+Track:
+
+- Correctness and hidden-check pass rate
+- Human review and rework time
+- Wall-clock lead time
+- Total usage or credits across all agents
+- Escaped defects and rollback
+- Diff size and scope violations
+- Variance across repeated runs
+
+See [Cost Observability](cost-observability.md) and [Benchmarking AI Coding Tools](../benchmarks/README.md).
 
 ## Key takeaway
 
-You already paid for the month. What you are protecting now is **access** — staying inside your window so the tool is there when the work is real.
-
-Waste doesn't cost you money on a subscription. It costs you the tool, right when you need it.
-
-## Sources
-
-- Claude Help Center — *Usage limit best practices*: <https://support.claude.com/en/articles/9797557-usage-limit-best-practices>
-- Claude Help Center — *What is the Max plan?*: <https://support.claude.com/en/articles/11049741-what-is-the-max-plan>
-- Claude Code Docs — *Manage costs effectively*: <https://code.claude.com/docs/en/costs>
-- OpenAI Developers — *Codex pricing*: <https://developers.openai.com/codex/pricing>
-- OpenAI Developer Community — *Understanding the new Codex limit system*: <https://community.openai.com/t/understanding-the-new-codex-limit-system-after-the-april-9-update/1378768>
-
-*Tier and limit specifics change frequently and vary by plan; the structure (5-hour window + weekly cap, 5× vs 20× tiers) is the durable part. Check your tool's live usage screen for current numbers.*
+The best token optimization is avoiding wrong work. Give the model a verifiable task, keep context and tools focused, and stop when new evidence—not more generation—is needed.

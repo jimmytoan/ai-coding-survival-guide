@@ -1,99 +1,165 @@
-# Alternatives and Tool Comparison
+# Compare AI Coding Tools
 
-This repo does not declare one winner.
+No tool wins every workflow. Compare candidates on your repositories, tasks, risk, and operating constraints—not a demo or model leaderboard.
 
-Different AI coding tools work better for different workflows, teams, budgets, and security requirements.
+## Start with the deployment model
 
-## Tools to compare
+Common categories include:
 
-Common options include:
+- IDE autocomplete and chat
+- Local terminal or desktop coding agents
+- Cloud agents that open pull requests
+- Code-review agents
+- Direct API workflows
+- Open-source agent clients
+- Local or self-hosted models
+- Internal platforms that route several models and tools
 
-- GitHub Copilot
-- Cursor
-- Claude Code
-- OpenAI Codex
-- OpenCode
-- Aider
-- Continue
-- Cline
-- Roo Code
-- Direct API usage
-- Local models
-- Self-hosted coding assistants
+Example products change quickly. As of **2026-07-11**, teams commonly evaluate GitHub Copilot, Cursor, Claude Code, OpenAI Codex, OpenCode, Aider, Continue, Cline, Roo Code, and internal or self-hosted alternatives. Verify current availability and terms before choosing.
 
-## Compare by workflow, not vibes
+## Freeze representative tasks
 
-Run the same task across tools:
+Use real, permission-safe tasks with objective acceptance checks:
 
-1. Explain a bug in a small function.
-2. Generate unit tests for one file.
-3. Refactor a two-file module.
-4. Implement a small feature from an issue.
-5. Review a pull request.
-6. Debug a failing CI test.
-7. Update documentation from code changes.
-8. Plan a migration.
+- Explain an unfamiliar request or data flow
+- Reproduce and fix a local bug
+- Implement a small multi-file feature
+- Add behavior-oriented tests
+- Review a seeded diff
+- Perform a scoped migration
+- Diagnose a CI failure
+- Update documentation from a code change
+- Handle one security-sensitive scenario
 
-Use: [Benchmark Template](../benchmarks/benchmark-template.csv)
+Freeze the repository commit, environment, prompt, starting context, and hidden evaluator checks. Repeat each run because outputs vary.
 
-## Evaluation criteria
+Use the [Benchmark Protocol](../benchmarks/README.md) and [Task Template](../benchmarks/task-template.md).
 
-Compare:
+## Evaluate complete outcomes
 
-- Cost per useful task
-- Time saved
-- Code quality
-- Review effort
-- Security controls
-- Context control
-- Model choice
-- Agent mode behavior
-- Team visibility
-- Enterprise policy support
-- IDE integration
-- Repository access model
-- Auditability
+### Quality
 
-## Questions for teams
+- Acceptance and hidden-check pass rate
+- First-pass correctness
+- Severity of introduced or missed defects
+- Scope control
+- Test quality
+- Maintainability and architectural fit
+- Variance across runs
 
-Before standardizing on a tool:
+### Productivity
 
-- Can admins see usage by user/team?
-- Can admins set budgets?
-- Can users choose cheaper models?
-- Can expensive models be restricted?
-- Can the tool explain what context is sent?
-- Does the tool support enterprise identity?
-- Does it respect repository permissions?
-- Does it create audit trails?
-- Can agent actions be approved?
-- Can generated code be traced and reviewed?
+- Time to first useful result
+- Total lead time to verified completion
+- Human brief, interaction, review, and rework time
+- Ability to resume and hand off
+- Latency under normal limits
 
-## Direct API vs assistant products
+### Context and repository fit
 
-Direct APIs can be cheaper or more controllable for some workflows.
+- Code search and navigation quality
+- Project-instruction discovery and precedence
+- Context transparency and compaction behavior
+- Large-repository performance
+- Generated, vendored, and monorepo handling
+- Support for your languages, build system, and test environments
 
-Assistant products can be better integrated and easier to use.
+### Agent safety and control
 
-Direct API may be better for:
+- Sandbox and filesystem boundaries
+- Network and secret isolation
+- Approval policies and destructive-action controls
+- Tool and MCP permission scopes
+- Prompt-injection mitigations
+- Branch, worktree, and dirty-tree handling
+- Audit logs and action traceability
 
-- Custom internal workflows
-- Centralized cost tracking
-- Model routing
-- Audit logging
-- Internal platforms
-- Strong access controls
+### Data and legal fit
 
-Assistant products may be better for:
+- Data retention and model-training policy
+- Regional processing and residency
+- Identity, SSO, RBAC, and admin policy
+- Repository and connector authorization model
+- Public-code matching and provenance controls
+- Indemnity and contractual terms
+- Compliance and audit exports
 
-- Individual productivity
-- IDE-native workflows
-- Quick adoption
-- Lower setup effort
-- Built-in agent behavior
+### Operations and economics
+
+- Subscription, credits, API, and overage model
+- Usage visibility and budgets
+- Model routing and reasoning controls
+- Offline or local capability
+- Reliability and support
+- Exportability of sessions, configuration, and workflows
+- Lock-in and migration cost
+
+### Developer experience
+
+- IDE, terminal, desktop, web, and mobile surfaces
+- Accessibility
+- Review ergonomics
+- Permission-prompt quality
+- Support for parallel work without edit collisions
+- Ease of creating reusable commands, skills, or policies
+
+## Compare default and tuned setups
+
+Run two lanes:
+
+1. **Default experience:** what a new developer receives.
+2. **Team-tuned experience:** project instructions, approved tools, model routing, and verification workflow.
+
+A tool that needs extensive tuning may still be worthwhile, but include that setup and maintenance cost.
+
+## Separate model from product
+
+The same model can behave differently across products because of:
+
+- System instructions
+- Repository indexing and retrieval
+- Tool implementation
+- Context management
+- Sandbox and approval policy
+- Agent loop and stopping behavior
+- Model version or provider routing
+
+Record the full tool/model/version/configuration combination. Do not attribute every difference to the model name.
+
+## Direct API versus assistant product
+
+Direct API workflows can offer:
+
+- Precise model and prompt control
+- Custom routing, caching, and observability
+- Organization-specific permissions and audit
+- Integration with internal systems
+
+They also require engineering for authentication, sandboxing, context retrieval, tool safety, evaluations, UI, and maintenance.
+
+Packaged assistants can offer faster adoption and polished repository workflows, but may provide less control or portability. Compare the total operating model, not only token price.
+
+## Run a security and governance review
+
+Before standardizing, involve security, legal/privacy, platform, and developer-experience owners. Verify claims in contracts and official documentation rather than sales summaries.
+
+Test high-risk behavior explicitly:
+
+- Malicious instructions in an issue or repository file
+- A suggested nonexistent dependency
+- A destructive command
+- A request for production credentials
+- An external write or message
+- A contributor change to agent instructions or CI
+
+## Make a reversible decision
+
+- Keep task briefs, tests, and repository instructions portable.
+- Avoid putting critical workflow only in proprietary chat history.
+- Export usage and audit data where possible.
+- Re-evaluate when pricing, models, policy, or your task mix changes.
+- Pilot with a bounded group and explicit success/exit criteria.
 
 ## Key takeaway
 
-Do not compare tools by marketing pages.
-
-Compare them by your real tasks.
+Choose the system that produces the best verified outcomes within your security, governance, developer-experience, and cost constraints.
