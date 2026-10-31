@@ -88,6 +88,14 @@ Subscriptions can still have session, weekly, fair-use, or feature limits. Waste
 
 See the [Token Optimization Playbook](token-optimization-playbook.md), [Claude Code](claude-code-optimization.md), and [Codex](codex-optimization.md) guides.
 
+## Which plan and model should I pick?
+
+Start with the mid-tier model your tool offers and the plan that covers a normal week of your real tasks. Move up a model when an evaluation at higher effort still fails, and move up a plan when you repeatedly hit the weekly limit doing valuable work. The current Claude, Codex, and Antigravity models and plan rules are in [Models and Plan Limits](models-and-plan-limits.md).
+
+## Why did my limit run out faster than usual?
+
+Common causes are a long session that rereads its full history every turn, an expired prompt cache, a top-tier model, background loops or subagents, and many parallel sessions. Check the usage view, start a fresh session for unrelated work, and see [Field Notes](field-notes.md) and the [Token Optimization Playbook](token-optimization-playbook.md).
+
 ## Is usage-based billing bad?
 
 Not inherently. A short completion and an autonomous multi-step task use different resources. What matters is visibility, budgets, controls, data terms, and value per verified outcome.
@@ -97,6 +105,10 @@ Not inherently. A short completion and an autonomous multi-step task use differe
 Measure verified and first-pass success, human review and rework, lead time, escaped defects, total provider usage, and policy exceptions by task type and risk. Do not optimize prompt count or generated lines.
 
 See [Cost and Outcome Observability](cost-observability.md).
+
+## What should I learn as an engineer now?
+
+Read code fast, debug from evidence, design checks that prove behavior, understand data and production systems, and think about security and failure. Syntax recall matters less than it did. See [Engineering Fundamentals](engineering-fundamentals.md) and [Software Development Tips](software-development-tips.md).
 
 ## What is the Max Power way?
 

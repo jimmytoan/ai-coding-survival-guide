@@ -1,6 +1,6 @@
 # Codex Optimization
 
-> Last verified: **2026-07-11**. Codex models, plans, limits, and configuration change frequently; check the linked official pages and your local `codex --help` before copying settings.
+> Last verified: **2026-10-31** for plans, models, limits, and workflow guidance. Profile and configuration syntax below was last verified **2026-07-11**. Codex models, plans, limits, and configuration change frequently; check the linked official pages and your local `codex --help` before copying settings.
 
 Optimize Codex for successful, reviewable tasks per unit of time and usage. The highest-leverage habits are clear acceptance criteria, focused context, matched model/reasoning, safe permissions, executable verification, and review of the actual diff.
 
@@ -8,24 +8,46 @@ Optimize Codex for successful, reviewable tasks per unit of time and usage. The 
 
 For ChatGPT plans, Codex usage depends on model, context, reasoning, and tools.
 
-- Local messages and cloud tasks share a five-hour window.
-- Additional weekly limits may apply; do not assume a universal reset schedule.
-- Plus and Pro tiers have different included capacity; current Pro offerings include 5× and 20× tiers.
-- Plus and Pro users can use purchased credits after included limits are reached.
+- On Plus and standard Business, local messages are counted per model over a five-hour window. OpenAI publishes ranges, such as 15–160 messages for GPT-6.1 Sol and 350–3,000 for GPT-6 Luna.
+- Pro currently has no five-hour limit, and Pro tiers are $100, $200, and $500 per month. Weekly limits may still apply on any plan.
+- Cloud tasks use more allowance than local messages.
+- Plus and Pro users can buy credits after included limits are reached.
 - API-key usage is usage-based rather than drawn from ChatGPT plan limits.
 - Current limits are visible in the Codex usage dashboard and via `/status` in an active CLI session.
 
-Use the live dashboard as the source of truth. Plan names, rates, and available models are volatile.
+Use the live dashboard as the source of truth. Plan names, rates, and available models are volatile; see [Models and Plan Limits](models-and-plan-limits.md) for the current tables.
 
 ## Route routine and difficult work differently
 
 Use the least costly available model that meets a measured quality bar for the task.
 
-- Routine search, explanation, formatting, and local edits often fit an economical model and lower reasoning.
-- Cross-cutting diagnosis, architecture, migrations, and subtle review may justify a more capable model or higher effort.
+| Model | OpenAI positions it for |
+|---|---|
+| GPT-6 Luna | Focused, high-volume work: summarization, extraction, focused coding |
+| GPT-6.1 Terra | Fast, efficient writing, visual understanding, and computer use |
+| GPT-6.1 Sol | Repeated, long-running work across code, apps, and documents at lower cost than Astra |
+| Astra | The hardest end-to-end work with sustained reasoning |
+
+- Routine search, explanation, formatting, and local edits often fit Luna or a lower effort.
+- Cross-cutting diagnosis, architecture, migrations, and subtle review may justify Sol, Astra, or higher effort.
+- Effort runs from Light or Low through Medium, High, and Extra High, with Max on some models and Ultra, which uses subagents, on others. OpenAI says effort levels do not map exactly between model generations, so re-tune after a model change.
+- Models retire on a schedule. GPT-5.5 left Codex with ChatGPT sign-in on 2026-10-14, so configs that name old models need updating.
 - High-risk work also requires tests, scanners, and qualified human review; model strength is not a safety control.
 
 Change one dimension deliberately. If an attempt fails because the requirement or evidence is incomplete, a more expensive model may repeat the same mistake.
+
+## Prompt for current models
+
+OpenAI's guidance for GPT-6 Astra suggests pruning habits built for older models. It was written for Astra, so re-test it on Luna, Terra, and Sol before deleting instructions they may still need:
+
+- State goal, context, constraints, and when the task is done. Use `@` mentions for files.
+- Drop generic "always run the tests" lines. Grant permission for specific safe checks, such as running the local suite and fixing failures caused by your change, and include that in the task definition.
+- Drop long step-by-step recipes and strong "ask first" language. Describe the goal and boundaries, and keep strict limits only where real risk exists.
+- Keep skill descriptions short, make the skill root a router to supporting docs, and review `AGENTS.md` and skills regularly to remove stale instructions.
+- Use Plan mode (`/plan` or Shift+Tab) for ambiguous work, or ask Codex to interview you first.
+- When Codex makes the same mistake twice, ask for a retrospective and update `AGENTS.md`.
+
+See [Field Notes](field-notes.md) for how these compare with Anthropic's guidance.
 
 ## Use current profile files
 
@@ -111,7 +133,9 @@ Give Codex the repository's exact checks and require it to report results:
 
 Review the actual Git diff after the edit. Asking for a unified diff in the response is unnecessary when Codex already changed files; a concise handoff plus the real diff is clearer.
 
-Codex's review workflow can inspect uncommitted changes, a base-branch diff, or a commit without modifying the worktree. Use a fresh review context for meaningful changes to reduce shared assumptions.
+Codex's review workflow (`/review`) can inspect uncommitted changes, a base-branch diff, or a commit without modifying the worktree. Use a fresh review context for meaningful changes to reduce shared assumptions. Teams can point `AGENTS.md` at a `code_review.md` so review behavior stays consistent.
+
+Manage chats by unit of work: `/resume` returns to a saved chat, `/fork` branches one while keeping the original, and `/compact` summarizes long context. Run parallel tasks in separate Git worktrees; OpenAI lists live tasks on the same files without worktrees as a common mistake.
 
 ## Use subagents for a reason
 
@@ -140,6 +164,9 @@ See [Subagents and Agent Teams](subagents-and-agent-teams.md).
 ## Sources
 
 - OpenAI — [Codex pricing and limits](https://learn.chatgpt.com/docs/pricing)
+- OpenAI — [Codex models](https://learn.chatgpt.com/docs/models)
+- OpenAI — [Codex best practices](https://learn.chatgpt.com/guides/best-practices)
+- OpenAI — [Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
 - OpenAI — [Advanced configuration: profiles](https://learn.chatgpt.com/docs/config-file/config-advanced#profiles)
 - OpenAI — [Configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)
 - OpenAI — [Custom instructions with `AGENTS.md`](https://learn.chatgpt.com/docs/agent-configuration/agents-md)

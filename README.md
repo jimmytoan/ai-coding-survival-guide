@@ -103,6 +103,8 @@ Full workflow: [A Reliable AI Coding Workflow](docs/ai-coding-workflow.md)
 
 | Need | Guide |
 |---|---|
+| See current models and plan limits (Claude, Codex, Gemini) | [Models and Plan Limits](docs/models-and-plan-limits.md) |
+| Keep the tips that hold up and drop the ones models outgrew | [Field Notes](docs/field-notes.md) |
 | Optimize capacity without reducing quality | [Token Optimization Playbook](docs/token-optimization-playbook.md) |
 | Compact long work safely | [Compaction and Prompt Caching](docs/compact-and-caching.md) |
 | Delegate or parallelize intentionally | [Subagents and Agent Teams](docs/subagents-and-agent-teams.md) |
@@ -117,8 +119,15 @@ Full workflow: [A Reliable AI Coding Workflow](docs/ai-coding-workflow.md)
 | Measure cost and engineering outcomes | [Cost and Outcome Observability](docs/cost-observability.md) |
 | Compare tools with real tasks | [Compare AI Coding Tools](docs/alternatives.md) |
 | Run reproducible evaluations | [Benchmark Protocol](benchmarks/README.md) |
-| Preserve your own engineering judgment | [Learn While Coding with AI](docs/learning-with-ai.md) |
 | Answer a common question | [FAQ](docs/faq.md) |
+
+### Grow as an engineer
+
+| Need | Guide |
+|---|---|
+| Decide what to learn and in what order | [Engineering Fundamentals in the AI Era](docs/engineering-fundamentals.md) |
+| Build daily habits for debugging, testing, review, and operations, each with an agent note | [Software Development Tips](docs/software-development-tips.md) |
+| Preserve your own engineering judgment while using AI | [Learn While Coding with AI](docs/learning-with-ai.md) |
 
 ## Twelve practices worth remembering
 
@@ -239,6 +248,8 @@ Commands, models, plan limits, pricing, and preview features age quickly. Tool-s
 - Check current official documentation.
 - Prefer durable principles over unsupported percentages.
 - Record the surface, plan, version, and verification date.
+
+For a dated snapshot of the current Claude, Codex, and Gemini models and plan limits, see [Models and Plan Limits](docs/models-and-plan-limits.md) (verified 2026-10-31).
 
 See [Contributing](CONTRIBUTING.md) for the source and validation policy.
 

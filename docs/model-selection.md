@@ -47,7 +47,9 @@ That is an evaluation question, not a slogan. A cheap model with high rework is 
 | Security-sensitive change | Strong capable model plus security tools | Always require qualified human review |
 | Final mechanical cleanup | Fast model or deterministic tooling | Behavior may change |
 
-Model labels and availability change. Benchmark the actual models available in your tool rather than copying a permanent “small vs. large” list.
+Model labels and availability change. Benchmark the actual models available in your tool rather than copying a permanent “small vs. large” list. For the current Claude, Codex, and Gemini lineups and what each plan includes, see [Models and Plan Limits](models-and-plan-limits.md).
+
+Vendors now publish a default plus an escalation tier for each family. In late 2026 the pattern is a mid-tier default for everyday work (for example Claude Opus 5.5 at medium effort or GPT-6.1 Sol), a cheaper tier for high-volume or subagent work (Haiku, Luna, Flash), and a top tier you choose deliberately for the hardest work (Fable, Astra, Gemini 4 Argon). The top tier spends plan allowance fastest, so reach for it when an eval at higher effort on the default still fails.
 
 ## Adjust reasoning separately
 

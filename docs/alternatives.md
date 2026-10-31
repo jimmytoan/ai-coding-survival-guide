@@ -17,6 +17,8 @@ Common categories include:
 
 Example products change quickly. As of **2026-07-11**, teams commonly evaluate GitHub Copilot, Cursor, Claude Code, OpenAI Codex, OpenCode, Aider, Continue, Cline, Roo Code, and internal or self-hosted alternatives. Verify current availability and terms before choosing.
 
+Update **2026-10-31**: Google's documentation says Gemini CLI was replaced by Antigravity CLI on 2026-06-18, so evaluate Google's terminal agent as Antigravity, not Gemini CLI. Google's plans use quota that refreshes on a five-hour and weekly cadence rather than a fixed daily request count. See [Models and Plan Limits](models-and-plan-limits.md) for how the Claude, Codex, and Antigravity plans compare, and the sources there for what was and was not verified. The other products in the list above were not re-checked on that date.
+
 ## Freeze representative tasks
 
 Use real, permission-safe tasks with objective acceptance checks:

@@ -86,6 +86,11 @@ Use AI heavily for feedback and unfamiliar navigation, but periodically:
 
 The goal is not purity. It is preserving the ability to notice when the assistant is wrong.
 
+## Go further
+
+- [Engineering Fundamentals in the AI Era](engineering-fundamentals.md): what to study, in what order, with a weekly routine and 90-day plan.
+- [Software Development Tips](software-development-tips.md): day-to-day habits for debugging, testing, review, and operations.
+
 ## Key takeaway
 
 Use AI to get more deliberate practice per hour, not fewer opportunities to think.
